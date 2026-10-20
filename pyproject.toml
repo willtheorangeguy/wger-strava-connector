@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=77,<81"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wger-strava-connector"
+version = "0.1.0"
+description = "Export completed wger strength sessions to Strava with structured exercises"
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = ["httpx==0.28.1"]
+
+[project.scripts]
+wger-strava = "wger_strava.cli:main"
+
+[tool.setuptools.package-data]
+wger_strava = ["exercises.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["integration: uses the Docker wger harness and mock Strava server"]
