@@ -1,6 +1,6 @@
 # Release preparation
 
-This connector is currently a local Git repository. Before publishing a release, create its GitHub repository, push `main`, and dispatch the test workflow to exercise the public wger harness. No production Strava credentials are needed for tests.
+Repository: [willtheorangeguy/wger-strava-connector](https://github.com/willtheorangeguy/wger-strava-connector). Push the intended release commit to `main` and dispatch the test workflow to exercise the public wger harness before publishing. No production Strava credentials are needed for tests.
 
 1. Update `pyproject.toml` and `src/wger_strava/__init__.py` to the same version. Update the default version in both Compose/environment examples, the changelog, and validation notes.
 2. Run `python test_harness.py`, validate Compose examples, and inspect `git diff --check`.

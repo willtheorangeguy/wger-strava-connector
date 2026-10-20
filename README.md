@@ -13,7 +13,7 @@ Create an empty directory and put these two files in it:
 - `docker-compose.yml`
 - `.env`: copy `.env.example` from this repository, or rename the release download `env.example` to `.env`.
 
-No source checkout, Python installation, or local image build is needed. The Compose file pulls `ghcr.io/willtheorangeguy/wger-strava-connector:0.1.0`. **The first GitHub release has not been published yet:** these setup files become runnable with the public image once that release workflow finishes. Each release will include all four standalone/existing-wger setup files as downloads.
+No source checkout, Python installation, or local image build is needed. Download the files from [release v0.1.0](https://github.com/willtheorangeguy/wger-strava-connector/releases/tag/v0.1.0). The Compose file pulls `ghcr.io/willtheorangeguy/wger-strava-connector:0.1.0`. Each release includes all four standalone/existing-wger setup files as downloads after its container publishing workflow completes.
 
 Fill in `.env`:
 
@@ -124,6 +124,6 @@ pip install --no-deps -e .
 pytest -q -m 'not integration'
 ```
 
-CI runs unit/container checks on pushes and pull requests. A manual workflow run also checks out the public wger harness and runs the integration suite. The release workflow can publish multi-platform GHCR images when a matching GitHub release is published; this repository has not yet been published or released.
+CI runs unit/container checks on pushes and pull requests. A manual workflow run also checks out the public wger harness and runs the integration suite. Publishing a matching GitHub release triggers multi-platform GHCR image builds and attaches version-matched setup downloads. See [RELEASING.md](RELEASING.md).
 
 MIT licensed. See [LICENSE](LICENSE) and [VALIDATION.md](VALIDATION.md).

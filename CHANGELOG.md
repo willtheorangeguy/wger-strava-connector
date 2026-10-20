@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0 — Unreleased
+## 0.1.0 — 2026-10-20
 
 - Export completed wger sessions as Strava strength JSON, with mapped exercises, actual repetitions/load, and timed sets.
 - Docker deployment and an overlay for an existing wger Compose stack.
