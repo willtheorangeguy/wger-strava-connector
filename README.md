@@ -8,18 +8,26 @@ This initial version is tested against the [wger addon harness](https://github.c
 
 ## Docker setup
 
-Clone this repository. Copy `.env.example` to `.env`, then fill in:
+Create an empty directory and put these two files in it:
+
+- `docker-compose.yml`
+- `.env`: copy `.env.example` from this repository, or rename the release download `env.example` to `.env`.
+
+No source checkout, Python installation, or local image build is needed. The Compose file pulls `ghcr.io/willtheorangeguy/wger-strava-connector:0.1.0`. **The first GitHub release has not been published yet:** these setup files become runnable with the public image once that release workflow finishes. Each release will include all four standalone/existing-wger setup files as downloads.
+
+Fill in `.env`:
 
 - `WGER_BASE_URL`: your wger server, reachable **from the connector container**. The example uses the local harness on port 8101.
 - `WGER_TOKEN`: your wger **legacy API token** from your account settings.
 - `STRAVA_CLIENT_ID` and `STRAVA_CLIENT_SECRET`: create your own application at [Strava API settings](https://www.strava.com/settings/api). Set its authorization callback domain to `localhost`.
 - `WORKOUT_TIMEZONE`: your IANA timezone, for example `America/Edmonton`.
 - `EXPORT_SINCE`: optional `YYYY-MM-DD` boundary at midnight UTC. Leave blank to start with today's UTC date, saved on the first preview/sync. Set a date explicitly to backfill older sessions.
+- `CONNECTOR_VERSION`: the released image version, without `v`. Release downloads select their matching version automatically.
 
-The standalone deployment is `.env` + `docker-compose.yml` in this checkout; Compose builds the container locally. A published container image is not required.
+Then pull the image and authorize your Strava account once:
 
 ```sh
-docker compose build
+docker compose pull
 docker compose run --rm connector auth-url
 ```
 
@@ -60,19 +68,26 @@ State is bound to the source username/server and destination athlete/application
 
 ## Add to an existing wger Docker Compose stack
 
-Add the settings from [`examples/wger.env.example`](examples/wger.env.example) to the `.env` alongside your wger Compose file. `STRAVA_CONNECTOR_PATH` is the absolute path to this checkout. The default URL `http://web:8000` assumes your wger service is named `web` and both services use the default Compose network; adapt the URL and networks to your stack.
+Copy [`examples/docker-compose.wger.yml`](examples/docker-compose.wger.yml) beside your existing wger Compose file, and add the settings from [`examples/wger.env.example`](examples/wger.env.example) to that stack's `.env`. These two files are also release downloads. No connector source checkout or build context is needed.
 
-Use the overlay with your normal wger Compose file. Replace the paths below with your own:
+The default URL `http://web:8000` assumes your wger service is named `web` and both services use the default Compose network. If your service has another name, change `STRAVA_WGER_BASE_URL`. If your stack uses a custom network, add that same network to `strava-connector`. Port 8000 is the container's internal port; your host's published wger port is not needed for this arrangement.
+
+From your wger stack directory, use the overlay with your normal Compose file (replace the first filename if yours is different):
 
 ```sh
-docker compose -f /path/to/wger/docker-compose.yml -f /path/to/wger-strava-connector/examples/docker-compose.wger.yml build strava-connector
-docker compose -f /path/to/wger/docker-compose.yml -f /path/to/wger-strava-connector/examples/docker-compose.wger.yml run --rm strava-connector auth-url
-docker compose -f /path/to/wger/docker-compose.yml -f /path/to/wger-strava-connector/examples/docker-compose.wger.yml run --rm -i strava-connector auth-complete
+docker compose -f docker-compose.yml -f docker-compose.wger.yml pull strava-connector
+docker compose -f docker-compose.yml -f docker-compose.wger.yml run --rm strava-connector auth-url
+docker compose -f docker-compose.yml -f docker-compose.wger.yml run --rm -i strava-connector auth-complete
 # Use the same two -f arguments for preview, map, sync, etc.
-docker compose -f /path/to/wger/docker-compose.yml -f /path/to/wger-strava-connector/examples/docker-compose.wger.yml up -d strava-connector
+docker compose -f docker-compose.yml -f docker-compose.wger.yml run --rm strava-connector preview
+docker compose -f docker-compose.yml -f docker-compose.wger.yml run --rm strava-connector map 123 BARBELL_BENCH_PRESS
+docker compose -f docker-compose.yml -f docker-compose.wger.yml run --rm strava-connector sync
+docker compose -f docker-compose.yml -f docker-compose.wger.yml up -d strava-connector
 ```
 
 Alternatively, copy the `strava-connector` service and the `strava_connector_state` volume declaration into your existing Compose file. When switching from the standalone deployment, migrate its state volume before starting; the two examples use different named volumes.
+
+For maintenance, stop only `strava-connector`, run commands with the same two `-f` arguments, then start it again. To upgrade either deployment, change its version setting, pull, and run `up -d` for the connector service. Keep the state volume. For a fork or an alternative registry, set `CONNECTOR_IMAGE` (standalone) or `STRAVA_CONNECTOR_IMAGE` (existing stack) to the image repository without its tag.
 
 ## Data and recovery
 
@@ -87,6 +102,8 @@ Alternatively, copy the `strava-connector` service and the `strava_connector_sta
 Strava accounts authorize their own registered application. New applications have limited athlete capacity; see [Strava's rate limits and athlete capacity](https://developers.strava.com/docs/rate-limits/). Use HTTPS for remote services and follow [Strava's authentication documentation](https://developers.strava.com/docs/authentication/).
 
 ## Tests
+
+Developers can build from a checkout using `docker compose -f compose.build.yaml build` and use that same `-f compose.build.yaml` argument for all connector commands. This local-build configuration shares the standalone deployment's project name and state volume, so stop one before starting the other.
 
 With Docker running, check out `wger-addon-harness` beside this repository and run:
 

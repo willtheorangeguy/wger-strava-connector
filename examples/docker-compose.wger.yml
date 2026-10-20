@@ -1,10 +1,8 @@
-# Run from this connector checkout, using the full path to your wger compose file.
+# Place beside your existing wger Compose file; no connector checkout is needed.
 # The overlay assumes wger's web service is on the default network.
 services:
   strava-connector:
-    build:
-      context: ${STRAVA_CONNECTOR_PATH:?Set STRAVA_CONNECTOR_PATH to the absolute connector checkout path}
-    image: wger-strava-connector:local
+    image: ${STRAVA_CONNECTOR_IMAGE:-ghcr.io/willtheorangeguy/wger-strava-connector}:${STRAVA_CONNECTOR_VERSION:-0.1.0}
     environment:
       WGER_BASE_URL: ${STRAVA_WGER_BASE_URL:-http://web:8000}
       WGER_TOKEN: ${STRAVA_WGER_TOKEN:?Set STRAVA_WGER_TOKEN}

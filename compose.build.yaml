@@ -1,0 +1,13 @@
+# Developer setup: docker compose -f compose.build.yaml up --build -d
+name: wger-strava-connector
+services:
+  connector:
+    build: .
+    image: wger-strava-connector:local
+    env_file: .env
+    init: true
+    restart: unless-stopped
+    extra_hosts: ['host.docker.internal:host-gateway']
+    volumes: ['state:/data']
+volumes:
+  state:

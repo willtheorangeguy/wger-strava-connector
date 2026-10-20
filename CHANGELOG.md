@@ -8,3 +8,4 @@
 - Upload journal, asynchronous processing, explicit recovery, account binding, and rate-limit cooldowns.
 - Unit tests and real-wger/mock-Strava integration tests using the standalone wger addon harness.
 - CI checks and release-triggered multi-platform GHCR publishing workflow.
+- Copy-and-run GHCR Compose/environment files, an image-based existing-wger overlay, and version-matched release setup downloads.

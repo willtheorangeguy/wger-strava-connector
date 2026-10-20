@@ -1,8 +1,7 @@
 name: wger-strava-connector
 services:
   connector:
-    build: .
-    image: wger-strava-connector:local
+    image: ${CONNECTOR_IMAGE:-ghcr.io/willtheorangeguy/wger-strava-connector}:${CONNECTOR_VERSION:-0.1.0}
     env_file: .env
     init: true
     restart: unless-stopped
