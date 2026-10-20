@@ -1,4 +1,3 @@
-from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 import time
 from urllib.parse import urlsplit
@@ -90,6 +89,14 @@ class Strava(API):
         super().__init__(config.strava_url, state, **kwargs)
         self.config = config
 
+    @staticmethod
+    def credentials(result):
+        if not isinstance(result, dict) or any(not isinstance(result.get(k), str) or not result[k] for k in ("access_token", "refresh_token")):
+            raise ValueError("Strava returned an invalid OAuth token response; authorize again")
+        if not isinstance(result.get("expires_at"), int) or result["expires_at"] <= 0:
+            raise ValueError("Strava returned an invalid token expiry; authorize again")
+        return {key: result[key] for key in ("access_token", "refresh_token", "expires_at")}
+
     def token(self):
         token = self.state.get("oauth")
         if not token:
@@ -110,7 +117,7 @@ class Strava(API):
             self.state.set("refresh_uncertain", False)
             raise
         # Persist the newest token before any other API calls; never reuse .env tokens.
-        updated = {**token, **{key: result[key] for key in ("access_token", "refresh_token", "expires_at")}}
+        updated = {**token, **self.credentials(result)}
         self.state.set("oauth", updated)
         self.state.set("refresh_uncertain", False)
         return updated["access_token"]
@@ -127,9 +134,12 @@ class Strava(API):
         result = self.request("POST", "/oauth/token", data={
             "client_id": self.config.client_id, "client_secret": self.config.client_secret,
             "grant_type": "authorization_code", "code": code})
+        credentials = self.credentials(result)
+        if not isinstance(result.get("athlete"), dict) or not result["athlete"].get("id"):
+            raise ValueError("Strava did not return the authorized athlete ID")
         athlete = str(result["athlete"]["id"])
         self.state.bind("strava_athlete", athlete)
-        self.state.set("oauth", {key: result[key] for key in ("access_token", "refresh_token", "expires_at")})
+        self.state.set("oauth", credentials)
         self.state.set("refresh_uncertain", False)
         self.state.set("oauth_scopes", scopes)
         return athlete

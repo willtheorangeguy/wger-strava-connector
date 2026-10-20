@@ -1,0 +1,31 @@
+name: wger-strava-connector-tests
+services:
+  mock-strava:
+    image: python:3.12.13-alpine
+    working_dir: /tests
+    command: [python, mock_strava.py]
+    volumes: ['./tests:/tests:ro']
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=5)"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+  test:
+    build: .
+    image: wger-strava-connector:local
+    user: '0:0'
+    entrypoint: [python, -m, pytest]
+    command: [-q, --junitxml=/reports/junit.xml]
+    environment:
+      STRAVA_BASE_URL: http://mock-strava:8080
+      WGER_BASE_URL: http://web:8000
+      TEST_CREDENTIALS_FILE: /integration/test-credentials.json
+      PYTHONPATH: /app/src:/app/tests
+    volumes:
+      - ./src:/app/src:ro
+      - ./tests:/app/tests:ro
+      - ./scripts:/app/scripts:ro
+      - ./runtime:/integration:ro
+      - ./reports:/reports
+    depends_on:
+      mock-strava: {condition: service_healthy}

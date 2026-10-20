@@ -106,6 +106,8 @@ class Engine:
                     "name": plan["name"], "description": ("Exported from wger.\n" + plan["notes"])[:10000],
                     "external_id": plan["external_id"]},
                     files={"file": (plan["external_id"], encode(plan["payload"]).encode(), "application/json")})
+                if not isinstance(upload, dict) or not (upload.get("id_str") or upload.get("id")):
+                    raise UnknownWrite("POST", "/api/v3/uploads")
                 record["upload_id"] = str(upload.get("id_str") or upload["id"])
                 # Save ID before interpreting the remainder, so restart can poll it.
                 record["state"] = "processing"
