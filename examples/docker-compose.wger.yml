@@ -1,0 +1,22 @@
+# Run from this connector checkout, using the full path to your wger compose file.
+# The overlay assumes wger's web service is on the default network.
+services:
+  strava-connector:
+    build:
+      context: ${STRAVA_CONNECTOR_PATH:?Set STRAVA_CONNECTOR_PATH to the absolute connector checkout path}
+    image: wger-strava-connector:local
+    environment:
+      WGER_BASE_URL: ${STRAVA_WGER_BASE_URL:-http://web:8000}
+      WGER_TOKEN: ${STRAVA_WGER_TOKEN:?Set STRAVA_WGER_TOKEN}
+      STRAVA_CLIENT_ID: ${STRAVA_CLIENT_ID:?Set STRAVA_CLIENT_ID}
+      STRAVA_CLIENT_SECRET: ${STRAVA_CLIENT_SECRET:?Set STRAVA_CLIENT_SECRET}
+      WORKOUT_TIMEZONE: ${STRAVA_WORKOUT_TIMEZONE:-UTC}
+      EXPORT_SINCE: ${STRAVA_EXPORT_SINCE:-}
+      SYNC_INTERVAL_SECONDS: ${STRAVA_SYNC_INTERVAL_SECONDS:-900}
+      SETTLE_SECONDS: ${STRAVA_SETTLE_SECONDS:-300}
+      MAX_UPLOADS_PER_SYNC: ${STRAVA_MAX_UPLOADS_PER_SYNC:-10}
+    init: true
+    restart: unless-stopped
+    volumes: ['strava_connector_state:/data']
+volumes:
+  strava_connector_state:
