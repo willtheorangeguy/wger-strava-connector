@@ -36,3 +36,21 @@ def test_prerelease_does_not_get_stable_aliases():
 def test_reject_invalid_release(tag, prerelease, version, source_version):
     with pytest.raises(ValueError):
         release.release_metadata(tag, prerelease, version, source_version, "owner/repo")
+
+
+@pytest.mark.parametrize("version", ["0.2.0", "0.2.0-rc.1"])
+def test_release_downloads_target_actual_image_and_version(tmp_path, version):
+    assets_spec = importlib.util.spec_from_file_location(
+        "release_assets", Path(__file__).resolve().parents[1] / "scripts/release_assets.py"
+    )
+    assets = importlib.util.module_from_spec(assets_spec)
+    assets_spec.loader.exec_module(assets)
+    assets.render("ghcr.io/fork-owner/custom-connector", version, tmp_path)
+    assert {p.name for p in tmp_path.iterdir()} == {"docker-compose.yml", "env.example", "docker-compose.wger.yml", "wger.env.example"}
+    for name in ("docker-compose.yml", "docker-compose.wger.yml"):
+        content = (tmp_path / name).read_text()
+        assert "ghcr.io/fork-owner/custom-connector" in content
+        assert "CONNECTOR_VERSION:-" + version in content
+        assert "build:" not in content and "STRAVA_CONNECTOR_PATH" not in content
+    assert "CONNECTOR_VERSION=" + version + "\n" in (tmp_path / "env.example").read_text()
+    assert "STRAVA_CONNECTOR_VERSION=" + version + "\n" in (tmp_path / "wger.env.example").read_text()

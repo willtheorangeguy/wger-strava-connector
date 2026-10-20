@@ -93,3 +93,26 @@ jobs:
           DIGEST: ${{ steps.build.outputs.digest }}
         run: |
           printf 'Published %s:%s\n\nDigest: %s\n' "$IMAGE" "$VERSION" "$DIGEST" >> "$GITHUB_STEP_SUMMARY"
+
+  setup-files:
+    needs: [validate, publish]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Attach setup files for the published image
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          IMAGE: ${{ needs.validate.outputs.image }}
+          VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          python scripts/release_assets.py
+          gh release upload "$RELEASE_TAG" --clobber \
+            release-assets/docker-compose.yml release-assets/env.example \
+            release-assets/docker-compose.wger.yml release-assets/wger.env.example

@@ -25,6 +25,9 @@ services:
       - ./src:/app/src:ro
       - ./tests:/app/tests:ro
       - ./scripts:/app/scripts:ro
+      - ./docker-compose.yml:/app/docker-compose.yml:ro
+      - ./.env.example:/app/.env.example:ro
+      - ./examples:/app/examples:ro
       - ./runtime:/integration:ro
       - ./reports:/reports
     depends_on:

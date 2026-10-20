@@ -17,14 +17,20 @@ jobs:
       - run: pytest -q -m 'not integration' --junitxml=reports/unit.xml
       - name: Validate deployment examples
         env:
-          STRAVA_CONNECTOR_PATH: ${{ github.workspace }}
           STRAVA_WGER_TOKEN: mock-token
           STRAVA_CLIENT_ID: mock-client
           STRAVA_CLIENT_SECRET: mock-secret
+          IMAGE: ghcr.io/example/connector
+          VERSION: 0.2.0-rc.1
         run: |
           cp .env.example .env
           docker compose config --quiet
+          docker compose -f compose.build.yaml config --quiet
           docker compose -f examples/docker-compose.wger.yml config --quiet
+          python scripts/release_assets.py
+          cp release-assets/env.example release-assets/.env
+          docker compose -f release-assets/docker-compose.yml config --quiet
+          docker compose --env-file release-assets/wger.env.example -f release-assets/docker-compose.wger.yml config --quiet
       - name: Build and smoke-test container
         run: |
           docker build --tag wger-strava-connector:ci .
