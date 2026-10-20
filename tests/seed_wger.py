@@ -13,7 +13,10 @@ with transaction.atomic():
     user = User.objects.create_user(username=USERNAME, password=secrets.token_urlsafe(32))
     routine = Routine.objects.create(user=user, name="Strava export test", start="2026-01-01", end="2026-12-31")
     day = Day.objects.create(routine=routine, order=1, name="Upper + core")
-    exercises = list(Exercise.objects.order_by("pk")[:3])
+    exercises = [Exercise.objects.filter(translations__name__iexact=name).distinct().order_by("pk").first()
+                 for name in ("Bench Press", "Plank")]
+    if any(exercise is None for exercise in exercises):
+        raise ValueError("Expected Bench Press and Plank in the harness exercise catalog")
     start = datetime(2026, 1, 10, 18, tzinfo=timezone.utc)
     sessions = []
     for index in range(4):
