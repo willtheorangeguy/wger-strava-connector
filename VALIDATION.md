@@ -1,5 +1,9 @@
 # Validation
 
+[Release v0.1.0](https://github.com/willtheorangeguy/wger-strava-connector/releases/tag/v0.1.0) published successfully on 2026-10-20. Its [release workflow](https://github.com/willtheorangeguy/wger-strava-connector/actions/runs/39517436921) passed version validation, tests, multi-platform GHCR publishing, and setup download attachment. The four release assets are `docker-compose.yml`, `env.example`, `docker-compose.wger.yml`, and `wger.env.example`.
+
+Anonymous GHCR manifest requests returned HTTP 200 for `0.1.0`, `0.1`, and `latest`. All three tags resolve to the same amd64/arm64 OCI index: `sha256:2374beda9d9fe2b73ad9ec43a4f6b9150d6057bb1d555ff1b99e64afc9dd6473`. A fresh directory containing only the downloaded `docker-compose.yml` and `env.example` renamed to `.env` successfully pulled and started the published image, initialized its state volume, and ran `status`. Its isolated test volume was removed afterward. This smoke test made no authenticated wger or Strava API calls.
+
 Release preparation on 2026-10-20: the full local Docker run passed **50 tests in 34.37 seconds** (45 unit/release tests and 5 real-wger/mock-Strava integration cases). Temporary test users and credentials were removed. The public repository is [willtheorangeguy/wger-strava-connector](https://github.com/willtheorangeguy/wger-strava-connector).
 
 The [full hosted validation](https://github.com/willtheorangeguy/wger-strava-connector/actions/runs/39517083648) passed: **50 tests in 3.43 seconds**, plus unit-only checks, deployment/download configuration validation, a container build, and a non-root startup smoke test. GitHub's dependency scan reported no alerts at publication.
