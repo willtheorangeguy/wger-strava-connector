@@ -1,5 +1,14 @@
 # Validation
 
+Companion-service follow-up, October 21, 2026: all three regular Compose setups
+explicitly run `watch`, restart unless stopped, and retain `/data`. The overlay
+was merged with the actual wger harness and its shared main-service network checked.
+The unit suite passed **84 tests** (one media collection skip; five integration
+cases deselected), including new watcher tests that start before wger is available,
+observe a workout complete after startup, upload it once, poll its asynchronous
+result, and retain the exported journal. No real Strava uploads were performed.
+Report: `reports/watch-unit.xml`.
+
 [Release v0.1.0](https://github.com/willtheorangeguy/wger-strava-connector/releases/tag/v0.1.0) published successfully on 2026-10-20. Its [release workflow](https://github.com/willtheorangeguy/wger-strava-connector/actions/runs/39517436921) passed version validation, tests, multi-platform GHCR publishing, and setup download attachment. The four release assets are `docker-compose.yml`, `env.example`, `docker-compose.wger.yml`, and `wger.env.example`.
 
 Anonymous GHCR manifest requests returned HTTP 200 for `0.1.0`, `0.1`, and `latest`. All three tags resolve to the same amd64/arm64 OCI index: `sha256:2374beda9d9fe2b73ad9ec43a4f6b9150d6057bb1d555ff1b99e64afc9dd6473`. A fresh directory containing only the downloaded `docker-compose.yml` and `env.example` renamed to `.env` successfully pulled and started the published image, initialized its state volume, and ran `status`. Its isolated test volume was removed afterward. This smoke test made no authenticated wger or Strava API calls.

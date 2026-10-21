@@ -52,6 +52,9 @@ def test_release_downloads_target_actual_image_and_version(tmp_path, version):
         assert "ghcr.io/fork-owner/custom-connector" in content
         assert "CONNECTOR_VERSION:-" + version in content
         assert "build:" not in content and "STRAVA_CONNECTOR_PATH" not in content
+        if name != "docker-compose.media.yml":
+            assert "command: [watch]" in content
+            assert "restart: unless-stopped" in content
     assert 'CONNECTOR_VERSION:-'+version+'}-media' in (tmp_path/'docker-compose.media.yml').read_text()
     assert "CONNECTOR_VERSION=" + version + "\n" in (tmp_path / "env.example").read_text()
     assert "STRAVA_CONNECTOR_VERSION=" + version + "\n" in (tmp_path / "wger.env.example").read_text()

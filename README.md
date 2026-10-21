@@ -10,6 +10,23 @@ The strength exporter is tested against the [wger addon harness](https://github.
 
 ## Docker setup
 
+The connector is an always-running companion service to wger. After one-time
+Strava authorization and exercise mapping, `docker compose up -d` starts its
+`watch` loop. Keep wger and the connector running together; daily manual `sync`
+commands are unnecessary. The existing-stack overlay runs the same watcher next
+to wger on its Compose network, while standalone deployment reaches wger by URL.
+
+The watcher checks immediately, then every `SYNC_INTERVAL_SECONDS` (900 seconds
+by default). When a session has an end time and is at least `SETTLE_SECONDS`
+(300 seconds) old, it automatically uploads the eligible workout and polls Strava
+until processing finishes. With defaults, discovery normally takes 5–20 minutes
+after completion. Previously exported sessions are not uploaded again.
+
+Temporary wger/Strava API failures are logged and checked again on the next cycle.
+`restart: unless-stopped` restarts the container after a process failure or Docker
+restart. Keep its state volume. Missing exercise mappings still hold a workout for
+review, and uncertain uploads still require reconciliation to prevent duplicates.
+
 Create an empty directory and put these two files in it:
 
 - `docker-compose.yml`

@@ -5,6 +5,8 @@ services:
     build: .
     image: wger-strava-connector:local
     env_file: .env
+    # Run continuously beside the main service and export new eligible workouts.
+    command: [watch]
     init: true
     restart: unless-stopped
     extra_hosts: ['host.docker.internal:host-gateway']
