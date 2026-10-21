@@ -10,6 +10,7 @@ import secrets
 import signal
 import subprocess
 import tempfile
+import threading
 import time
 from urllib.parse import urlsplit
 
@@ -28,9 +29,10 @@ def profile_lock(profile):
         yield
 
 
-def login(profile, url='https://www.strava.com/login'):
+def login(profile, url='https://www.strava.com/login', stop=None):
     """A real browser displayed through localhost-only noVNC, with manual MFA."""
     processes = []
+    stop = stop or threading.Event()
     with profile_lock(profile), tempfile.TemporaryDirectory() as temp:
         password = secrets.token_urlsafe(8)[:8]
         password_file = Path(temp) / 'vnc-password'
@@ -48,7 +50,7 @@ def login(profile, url='https://www.strava.com/login'):
             else:
                 raise ValueError('Virtual display did not become ready')
             processes.append(subprocess.Popen(['x11vnc', '-display', ':99', '-localhost', '-rfbport', '5900',
-                '-forever', '-shared', '-passwdfile', str(password_file)], env=environment,
+                '-forever', '-shared', '-loop', '-passwdfile', str(password_file)], env=environment,
                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL))
             processes.append(subprocess.Popen(['websockify', '--web=/usr/share/novnc/', '6080', '127.0.0.1:5900'],
                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL))
@@ -61,9 +63,10 @@ def login(profile, url='https://www.strava.com/login'):
                 try:
                     page = context.pages[0] if context.pages else context.new_page()
                     page.goto(url, wait_until='domcontentloaded')
-                    while True:
-                        if any(process.poll() is not None for process in processes):
-                            raise ValueError('Login viewer stopped unexpectedly')
+                    while not stop.is_set():
+                        failed = next((process for process in processes if process.poll() is not None), None)
+                        if failed:
+                            raise ValueError(f'Login helper {Path(failed.args[0]).name} stopped (exit {failed.returncode})')
                         page.wait_for_timeout(1000)
                 finally:
                     context.close()
@@ -120,9 +123,11 @@ def attach_mock(page, origin, activity_id, athlete_id, images, journal):
 
 
 def main():
+    stop = threading.Event()
     def shutdown(*_):
-        raise KeyboardInterrupt
+        stop.set()
     signal.signal(signal.SIGTERM, shutdown)
+    signal.signal(signal.SIGINT, shutdown)
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest='command', required=True)
     sub.add_parser('login')
@@ -134,7 +139,7 @@ def main():
                 parsed = urlsplit(url)
                 if parsed.scheme != 'http' or parsed.hostname not in {'mock-strava-web','localhost','127.0.0.1'}:
                     raise ValueError('Login URL must be Strava or the local mock website')
-            login(Path(os.environ.get('BROWSER_PROFILE', '/browser-profile')), url)
+            login(Path(os.environ.get('BROWSER_PROFILE', '/browser-profile')), url, stop)
     except KeyboardInterrupt:
         pass
     except ValueError as error:

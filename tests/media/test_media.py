@@ -1,13 +1,14 @@
 from decimal import Decimal
 import json
 import os
+import re
 from pathlib import Path
 import struct
 import subprocess
 import sys
 import tempfile
 import time
-from urllib.request import urlopen
+from urllib.request import urlopen, Request
 
 import pytest
 pytest.importorskip('playwright.sync_api', reason='Media browser tests run in Dockerfile.media')
@@ -15,6 +16,12 @@ from playwright.sync_api import sync_playwright
 from wger_strava.media.browser import attach_mock, profile_lock
 from wger_strava.media.render import html, render
 from wger_strava.media.summary import demo, formatted_volume, volume
+
+
+@pytest.fixture(scope='module',autouse=True)
+def reset_mock():
+    with urlopen(Request(os.environ['MOCK_WEB_URL']+'/__reset',data=b'')) as response:
+        assert response.status==200
 
 
 def test_volume_counts_only_actual_external_load_repetitions():
@@ -44,6 +51,25 @@ def test_profile_has_exclusive_lock(tmp_path):
                 pass
     with profile_lock(tmp_path):
         assert tmp_path.stat().st_mode & 0o777 == 0o700
+
+
+@pytest.mark.parametrize('theme',['light','dark'])
+def test_headline_has_accessible_contrast(theme):
+    def luminance(rgb):
+        values=[channel/255 for channel in rgb]
+        linear=[v/12.92 if v<=.04045 else ((v+.055)/1.055)**2.4 for v in values]
+        return sum(v*factor for v,factor in zip(linear,[.2126,.7152,.0722]))
+    with sync_playwright() as p:
+        browser=p.chromium.launch(channel='chromium')
+        try:
+            page=browser.new_page()
+            page.set_content(html(demo(),theme,'summary'))
+            colors=page.evaluate('''() => [getComputedStyle(document.querySelector('h1')).color,
+                getComputedStyle(document.querySelector('.card')).backgroundColor].map(c => c.match(/\\d+/g).map(Number))''')
+            light,dark=sorted(map(luminance,colors),reverse=True)
+            assert (light+.05)/(dark+.05) >= 7
+        finally:
+            browser.close()
 
 
 @pytest.fixture(scope='module')
@@ -165,7 +191,10 @@ def test_login_viewer_runs_without_a_host_display_as_nonroot():
                                      stdout=log,stderr=log,user=10001,group=10001)
             try:
                 for _ in range(100):
-                    assert process.poll() is None, 'Login viewer exited during startup'
+                    if process.poll() is not None:
+                        details=(root/'viewer.log').read_text()[-6000:]
+                        details=re.sub(r'Temporary viewer password: .*','Temporary viewer password: [redacted]',details)
+                        pytest.fail('Login viewer exited during startup:\n'+details)
                     try:
                         with urlopen('http://127.0.0.1:6080/vnc.html',timeout=1) as response:
                             ready=response.status==200 and (profile/'chromium/Default/Preferences').exists()
@@ -178,5 +207,10 @@ def test_login_viewer_runs_without_a_host_display_as_nonroot():
                     pytest.fail('Headless login viewer did not become ready')
             finally:
                 process.terminate()
-                process.wait(timeout=15)
+                try:
+                    process.wait(timeout=15)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.wait()
+                    pytest.fail('Login viewer did not shut down cleanly')
         assert process.returncode==0

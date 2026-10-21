@@ -11,7 +11,7 @@ FONT = Path(__file__).parent / 'assets/InterVariable.woff2'
 CSS = '''
 @font-face{font-family:Inter;src:url(data:font/woff2;base64,FONT_DATA) format('woff2');font-weight:100 900}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,sans-serif;font-feature-settings:'tnum';color:var(--ink)}
-.card{position:relative;width:1080px;height:1080px;padding:64px;overflow:hidden;background:var(--bg)}
+.card{position:relative;width:1080px;height:1080px;padding:64px;overflow:hidden;background:var(--bg);color:var(--ink)}
 .light{--bg:#f4f5f8;--ink:#142b49;--muted:#6c7b8e;--accent:#266dd3;--line:#d9e1ec;--panel:#fff;--inactive:#dce3ec;--muscle:#c5d0df;--primary:#266dd3;--secondary:#a6c8f5;--body:#e8edf4;--animal:#5484c6;--ear:#3669ad}
 .dark{--bg:#0c1729;--ink:#f5f8ff;--muted:#90a5c0;--accent:#6fa9ff;--line:#293a50;--panel:#142339;--inactive:#263950;--muscle:#39516d;--primary:#5a9ef5;--secondary:#a3cef7;--body:#1c2e44;--animal:#6394d6;--ear:#3c6aa7}
 .dark:before{content:'';position:absolute;right:-240px;top:240px;width:720px;height:720px;border:1px solid #213752;border-radius:50%;pointer-events:none}

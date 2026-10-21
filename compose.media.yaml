@@ -21,6 +21,7 @@ services:
   media-login:
     <<: *media
     command: [login]
+    stop_grace_period: 30s
     profiles: [login]
     ports: ['127.0.0.1:6080:6080']
 volumes:

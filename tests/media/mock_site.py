@@ -52,6 +52,10 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         raw = self.rfile.read(int(self.headers.get('Content-Length', '0')))
+        if self.path == '/__reset':
+            PHOTOS.clear()
+            COUNTS.clear()
+            return self.respond('reset')
         if self.path == '/login':
             athlete = parse_qs(raw.decode())['athlete'][0]
             if not athlete.isdigit():
