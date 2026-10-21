@@ -60,8 +60,8 @@ docker compose -f compose.media.test.yaml down
 
 This uses real Chromium with a mock website. It exercises file selection, saving two PNGs, reopening the activity, persistent login across browser restart, wrong-account rejection, duplicate prevention, and uncertain-save recovery. It does not use Strava credentials or forward requests to Strava. The mock DOM is a behavioral fixture; it is **not evidence that the live Strava selectors work**.
 
-`attach_mock` explicitly rejects live Strava URLs. A live adapter and its ownership/media selectors must be verified after a user supplies an interactive login and agrees on a test activity. Do not claim automatic Strava attachment is complete until that live test passes.
+`attach_mock` explicitly rejects live Strava URLs. An operator-run [live browser feasibility test](LIVE-VALIDATION.md) has now saved both sample cards to a nominated private activity and verified their persistence after a browser restart. This does not connect the prototype to production workout exports.
 
 ## Approval gates and next work
 
-The dark direction has been selected and the requested visual revisions are included. Live browser feasibility remains to be established before adding the durable outbox, wger muscle metadata snapshots, automatic attachment to confirmed export IDs, recovery/status commands, both architecture builds and GHCR release integration. Keep current API exports independent of browser/media failures.
+The dark direction has been selected, the requested visual revisions are included, and live browser feasibility has been established for one consenting account. Next add the durable outbox, wger muscle metadata snapshots, automatic attachment to confirmed export IDs, robust media identity verification, recovery/status commands, both architecture builds and GHCR release integration. Keep current API exports independent of browser/media failures.

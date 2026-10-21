@@ -12,6 +12,6 @@ Validated on Docker Desktop (Linux containers) on October 20, 2026.
 
 Initial browser-milestone hosted checks for commit `3d285cf`: [connector tests](https://github.com/willtheorangeguy/wger-strava-connector/actions/runs/39526234479) and [media prototype tests](https://github.com/willtheorangeguy/wger-strava-connector/actions/runs/39526234512). Current branch checks appear in [GitHub Actions](https://github.com/willtheorangeguy/wger-strava-connector/actions). The media workflow also builds the prototype container and renders the design previews; its artifact contains PNGs and the JUnit report.
 
-These tests validate the local renderer and mock browser behavior. They do not validate live Strava page selectors, photo processing or browser login policy. No real Strava account or activity was used. Production workout exports do not invoke this prototype.
+The automated suites validate the local renderer and mock browser behavior. They do not validate live Strava page selectors, photo processing or browser login policy. A subsequent, separate [live feasibility test](LIVE-VALIDATION.md) verified saved-session reuse and both sample image attachments on a nominated private activity. Production workout exports do not invoke this prototype.
 
-The dark visual direction has been approved and revised. A live browser feasibility check remains required before implementing the production attachment worker. See [the design milestone](README.md).
+The dark visual direction has been approved and revised, and live browser feasibility has been demonstrated for one account. The production attachment worker remains to be implemented. See [the design milestone](README.md).
