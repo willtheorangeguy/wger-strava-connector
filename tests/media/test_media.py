@@ -13,7 +13,7 @@ from urllib.request import urlopen, Request
 import pytest
 pytest.importorskip('playwright.sync_api', reason='Media browser tests run in Dockerfile.media')
 from playwright.sync_api import sync_playwright
-from wger_strava.media.browser import attach_mock, profile_lock
+from wger_strava.media.browser import attach_mock, profile_lock, restore_session_cookies, save_session_cookies
 from wger_strava.media.comparisons import REFERENCES
 from wger_strava.media.render import html, render
 from wger_strava.media.summary import POUNDS_PER_KG, demo, formatted_volume, volume
@@ -84,6 +84,34 @@ def sign_in(page, origin, athlete='123456'):
     page.goto(origin+'/login')
     page.get_by_label('Athlete ID').fill(athlete)
     page.get_by_role('button',name='Sign in').click()
+
+
+def test_session_only_login_survives_browser_restart_and_logout_clears_saved_cookies(tmp_path):
+    origin=os.environ['MOCK_WEB_URL']
+    profile=tmp_path/'profile'
+    with profile_lock(profile), sync_playwright() as p:
+        context=p.chromium.launch_persistent_context(str(profile/'chromium'),headless=True,channel='chromium')
+        try:
+            page=context.new_page()
+            sign_in(page,origin)
+            # Match Strava's session-only authentication cookie, not Max-Age.
+            cookie=next(cookie for cookie in context.cookies() if cookie['name']=='athlete')
+            context.add_cookies([{**cookie,'expires':-1}])
+            save_session_cookies(context,profile)
+            assert (profile/'session-cookies.json').stat().st_mode & 0o777 == 0o600
+        finally:
+            context.close()
+        context=p.chromium.launch_persistent_context(str(profile/'chromium'),headless=True,channel='chromium')
+        try:
+            restore_session_cookies(context,profile)
+            page=context.new_page()
+            page.goto(origin+'/activities/101')
+            assert page.locator('[data-athlete-id]').get_attribute('data-athlete-id')=='123456'
+            context.clear_cookies()
+            save_session_cookies(context,profile)
+            assert json.loads((profile/'session-cookies.json').read_text())==[]
+        finally:
+            context.close()
 
 
 def test_four_cards_are_exact_size_and_render_deterministically(cards,tmp_path):

@@ -29,6 +29,26 @@ def profile_lock(profile):
         yield
 
 
+def restore_session_cookies(context, profile):
+    """Chromium does not normally reload cookies without an expiry on restart."""
+    path = profile / 'session-cookies.json'
+    if path.exists():
+        context.add_cookies(json.loads(path.read_text(encoding='utf-8')))
+
+
+def save_session_cookies(context, profile):
+    """Save browser-session cookies privately and atomically beside the profile."""
+    cookies = [cookie for cookie in context.cookies() if cookie.get('expires') == -1]
+    descriptor, temporary = tempfile.mkstemp(prefix='.session-cookies-', dir=profile)
+    try:
+        with os.fdopen(descriptor, 'w', encoding='utf-8') as stream:
+            json.dump(cookies, stream)
+        os.replace(temporary, profile / 'session-cookies.json')
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
+
+
 def login(profile, url='https://www.strava.com/login', stop=None):
     """A real browser displayed through localhost-only noVNC, with manual MFA."""
     processes = []
@@ -67,6 +87,7 @@ def login(profile, url='https://www.strava.com/login', stop=None):
                 context = p.chromium.launch_persistent_context(str(profile / 'chromium'), channel='chromium', headless=False,
                     env=environment, viewport={'width':1280,'height':900})
                 try:
+                    restore_session_cookies(context, profile)
                     page = context.pages[0] if context.pages else context.new_page()
                     page.goto(url, wait_until='domcontentloaded')
                     while not stop.is_set():
@@ -75,7 +96,10 @@ def login(profile, url='https://www.strava.com/login', stop=None):
                             raise ValueError(f'Login helper {Path(failed.args[0]).name} stopped (exit {failed.returncode})')
                         page.wait_for_timeout(1000)
                 finally:
-                    context.close()
+                    try:
+                        save_session_cookies(context, profile)
+                    finally:
+                        context.close()
         finally:
             for process in reversed(processes):
                 process.terminate()

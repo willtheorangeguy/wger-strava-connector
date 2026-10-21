@@ -40,6 +40,8 @@ docker compose -f compose.media.yaml run --rm --service-ports media-login
 
 Open `http://localhost:6080/vnc.html`. Enter the temporary viewer password printed by the command, then sign into Strava **inside that browser**. You handle password entry, MFA and any login challenge. No Strava password goes in `.env`. Stop the service with Ctrl+C when done; the Chromium profile remains in its named volume.
 
+Some Strava login cookies last only for a browser session. The viewer saves those cookies on graceful shutdown in a private, atomically replaced `session-cookies.json` file (mode 0600) inside the locked profile directory, and restores them on the next launch. Browser workers must use the same save/restore helpers. This preserves a valid login; it does not extend a session that Strava has expired or revoked.
+
 For a remote server, first open an SSH tunnel from your laptop:
 
 ```sh
