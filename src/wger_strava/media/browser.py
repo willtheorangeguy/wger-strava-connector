@@ -28,7 +28,7 @@ def profile_lock(profile):
         yield
 
 
-def login(profile):
+def login(profile, url='https://www.strava.com/login'):
     """A real browser displayed through localhost-only noVNC, with manual MFA."""
     processes = []
     with profile_lock(profile), tempfile.TemporaryDirectory() as temp:
@@ -60,7 +60,7 @@ def login(profile):
                     env=environment, viewport={'width':1280,'height':900})
                 try:
                     page = context.pages[0] if context.pages else context.new_page()
-                    page.goto('https://www.strava.com/login', wait_until='domcontentloaded')
+                    page.goto(url, wait_until='domcontentloaded')
                     while True:
                         if any(process.poll() is not None for process in processes):
                             raise ValueError('Login viewer stopped unexpectedly')
@@ -129,7 +129,12 @@ def main():
     args = parser.parse_args()
     try:
         if args.command == 'login':
-            login(Path(os.environ.get('BROWSER_PROFILE', '/browser-profile')))
+            url = os.environ.get('MEDIA_LOGIN_URL', 'https://www.strava.com/login')
+            if url != 'https://www.strava.com/login':
+                parsed = urlsplit(url)
+                if parsed.scheme != 'http' or parsed.hostname not in {'mock-strava-web','localhost','127.0.0.1'}:
+                    raise ValueError('Login URL must be Strava or the local mock website')
+            login(Path(os.environ.get('BROWSER_PROFILE', '/browser-profile')), url)
     except KeyboardInterrupt:
         pass
     except ValueError as error:

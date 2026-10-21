@@ -3,6 +3,10 @@ import json
 import os
 from pathlib import Path
 import struct
+import subprocess
+import sys
+import tempfile
+import time
 from urllib.request import urlopen
 
 import pytest
@@ -143,3 +147,36 @@ def test_expired_login_pauses_before_selecting_files(cards,tmp_path):
             assert not (tmp_path/'job.json').exists()
         finally:
             browser.close()
+
+
+def test_login_viewer_runs_without_a_host_display_as_nonroot():
+    # Only the local mock is opened. A real Strava sign-in still needs a human.
+    with tempfile.TemporaryDirectory(prefix='media-viewer-') as root:
+        root=Path(root)
+        root.chmod(0o755)
+        # The non-root process owns its profile; the parent only owns the log FD.
+        profile=root/'profile'
+        profile.mkdir()
+        os.chown(profile,10001,10001)
+        environment={**os.environ,'BROWSER_PROFILE':str(profile),'MEDIA_LOGIN_URL':os.environ['MOCK_WEB_URL']+'/login',
+                     'HOME':'/home/media'}
+        with (root/'viewer.log').open('w') as log:
+            process=subprocess.Popen([sys.executable,'-m','wger_strava.media.browser','login'],env=environment,
+                                     stdout=log,stderr=log,user=10001,group=10001)
+            try:
+                for _ in range(100):
+                    assert process.poll() is None, 'Login viewer exited during startup'
+                    try:
+                        with urlopen('http://127.0.0.1:6080/vnc.html',timeout=1) as response:
+                            ready=response.status==200 and (profile/'chromium/Default/Preferences').exists()
+                    except OSError:
+                        ready=False
+                    if ready:
+                        break
+                    time.sleep(.2)
+                else:
+                    pytest.fail('Headless login viewer did not become ready')
+            finally:
+                process.terminate()
+                process.wait(timeout=15)
+        assert process.returncode==0
