@@ -38,7 +38,13 @@ def login(profile, url='https://www.strava.com/login', stop=None):
         password_file = Path(temp) / 'vnc-password'
         password_file.write_text(password + '\n', encoding='utf-8')
         password_file.chmod(0o600)
-        environment = {**os.environ, 'DISPLAY': ':99'}
+        # Chromium's crash reporter also needs writable XDG directories. Keep
+        # these private to the profile instead of depending on a shared HOME.
+        for directory in ('config', 'cache'):
+            (profile / directory).mkdir(exist_ok=True, mode=0o700)
+        environment = {**os.environ, 'DISPLAY': ':99',
+                       'XDG_CONFIG_HOME': str(profile / 'config'),
+                       'XDG_CACHE_HOME': str(profile / 'cache')}
         try:
             processes.append(subprocess.Popen(['Xvfb', ':99', '-screen', '0', '1280x900x24', '-nolisten', 'tcp'], env=environment))
             for _ in range(100):

@@ -184,8 +184,12 @@ def test_login_viewer_runs_without_a_host_display_as_nonroot():
         profile=root/'profile'
         profile.mkdir()
         os.chown(profile,10001,10001)
+        # Reproduce a shared HOME made unwritable by earlier root-run browsers.
+        shared_home=root/'shared-home'
+        shared_home.mkdir(mode=0o755)
+        (shared_home/'.config').mkdir(mode=0o755)
         environment={**os.environ,'BROWSER_PROFILE':str(profile),'MEDIA_LOGIN_URL':os.environ['MOCK_WEB_URL']+'/login',
-                     'HOME':'/home/media'}
+                     'HOME':str(shared_home)}
         with (root/'viewer.log').open('w') as log:
             process=subprocess.Popen([sys.executable,'-m','wger_strava.media.browser','login'],env=environment,
                                      stdout=log,stderr=log,user=10001,group=10001)
