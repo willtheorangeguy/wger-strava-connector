@@ -18,6 +18,8 @@ jobs:
       - run: docker compose -f compose.media.test.yaml build test
       - run: docker compose -f compose.media.test.yaml up -d --wait mock-strava-web
       - run: docker compose -f compose.media.test.yaml run --rm test
+      - name: Render review previews
+        run: docker compose -f compose.media.yaml run --rm preview
       - name: Stop test services
         if: always()
         run: docker compose -f compose.media.test.yaml down
@@ -25,4 +27,6 @@ jobs:
         if: always()
         with:
           name: media-test-reports
-          path: reports/
+          path: |
+            reports/
+            design/previews/*.png
