@@ -2,6 +2,8 @@
 
 Export completed **wger strength workouts** to Strava, including individual exercises, sets, repetitions, weights, and timed sets. A separate Docker service reads your wger API and uploads a structured `WeightTraining` activity to Strava. It does not modify wger.
 
+The `feat/workout-summary-images` branch contains an experimental [image design and headless-browser login milestone](design/README.md). It is awaiting visual review and live Strava browser verification; production sync does not attach images yet.
+
 Uses Strava's documented [strength JSON upload format](https://developers.strava.com/docs/uploads/#json---strength-training-limited), rather than putting the exercises only in an activity description. Exercise names map to Strava's supported identifiers so Strava can display the workout log and muscle map. Strava may group variants under a more general exercise.
 
 This initial version is tested against the [wger addon harness](https://github.com/willtheorangeguy/wger-addon-harness), pinned to wger `2.8.0-dev.1`. It requires sessions with `datetime_start`, `datetime_end`, and logs linked by `session`. Legacy wger versions with date/time-only sessions are not supported. No live Strava account has been used to validate this connector yet; the test suite uses a local API double implementing the documented upload contract.
