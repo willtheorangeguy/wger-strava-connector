@@ -8,6 +8,7 @@ __pycache__/
 build/
 dist/
 release-assets/
+design/previews/*.html
 runtime/*
 !runtime/.gitkeep
 reports/*
