@@ -1,6 +1,7 @@
 name: Media prototype tests
 on:
   workflow_dispatch:
+  workflow_call:
   push:
     paths: ['.github/workflows/media.yml', 'Dockerfile.media', 'requirements.media.lock', 'compose.media*.yaml', 'src/wger_strava/media/**', 'tests/media/**']
   pull_request:

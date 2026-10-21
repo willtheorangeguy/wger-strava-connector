@@ -38,10 +38,26 @@ jobs:
     needs: validate
     uses: ./.github/workflows/test.yml
 
+  media-tests:
+    needs: validate
+    uses: ./.github/workflows/media.yml
+
   publish:
-    needs: [validate, tests]
+    needs: [validate, tests, media-tests]
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: connector
+            file: Dockerfile
+            suffix: ''
+            title: wger to Strava connector
+          - variant: media
+            file: Dockerfile.media
+            suffix: '-media'
+            title: Experimental workout cards and browser login tools
     permissions:
       contents: read
       packages: write
@@ -64,12 +80,12 @@ jobs:
           images: ${{ needs.validate.outputs.image }}
           flavor: latest=false
           tags: |
-            type=raw,value=${{ needs.validate.outputs.version }}
-            type=raw,value=${{ needs.validate.outputs.minor }},enable=${{ needs.validate.outputs.stable }}
-            type=raw,value=latest,enable=${{ needs.validate.outputs.stable }}
+            type=raw,value=${{ needs.validate.outputs.version }}${{ matrix.suffix }}
+            type=raw,value=${{ needs.validate.outputs.minor }}${{ matrix.suffix }},enable=${{ needs.validate.outputs.stable }}
+            type=raw,value=latest${{ matrix.suffix }},enable=${{ needs.validate.outputs.stable }}
           labels: |
-            org.opencontainers.image.title=wger to Strava connector
-            org.opencontainers.image.description=Completed wger strength workouts with structured exercises on Strava
+            org.opencontainers.image.title=${{ matrix.title }}
+            org.opencontainers.image.description=${{ matrix.title }}
             org.opencontainers.image.version=${{ needs.validate.outputs.version }}
             org.opencontainers.image.licenses=MIT
       - name: Build and publish
@@ -77,6 +93,7 @@ jobs:
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
+          file: ${{ matrix.file }}
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.metadata.outputs.tags }}
@@ -84,12 +101,12 @@ jobs:
           annotations: ${{ steps.metadata.outputs.annotations }}
           provenance: mode=max
           sbom: true
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=${{ matrix.variant }}
+          cache-to: type=gha,scope=${{ matrix.variant }},mode=max
       - name: Record published digest
         env:
           IMAGE: ${{ needs.validate.outputs.image }}
-          VERSION: ${{ needs.validate.outputs.version }}
+          VERSION: ${{ needs.validate.outputs.version }}${{ matrix.suffix }}
           DIGEST: ${{ steps.build.outputs.digest }}
         run: |
           printf 'Published %s:%s\n\nDigest: %s\n' "$IMAGE" "$VERSION" "$DIGEST" >> "$GITHUB_STEP_SUMMARY"
@@ -115,4 +132,7 @@ jobs:
           python scripts/release_assets.py
           gh release upload "$RELEASE_TAG" --clobber \
             release-assets/docker-compose.yml release-assets/env.example \
-            release-assets/docker-compose.wger.yml release-assets/wger.env.example
+            release-assets/docker-compose.wger.yml release-assets/wger.env.example \
+            release-assets/docker-compose.media.yml \
+            design/previews/dark-summary.png design/previews/dark-comparison.png \
+            design/previews/concepts.png design/previews/comparison-catalog.png

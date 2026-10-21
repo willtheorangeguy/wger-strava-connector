@@ -10,7 +10,8 @@ def render(image, version, destination):
     destination.mkdir(parents=True, exist_ok=True)
     for source, name in [("docker-compose.yml", "docker-compose.yml"), (".env.example", "env.example"),
                          ("examples/docker-compose.wger.yml", "docker-compose.wger.yml"),
-                         ("examples/wger.env.example", "wger.env.example")]:
+                         ("examples/wger.env.example", "wger.env.example"),
+                         ("examples/docker-compose.media.yml", "docker-compose.media.yml")]:
         content = (ROOT / source).read_text(encoding="utf-8")
         content = content.replace("ghcr.io/willtheorangeguy/wger-strava-connector", image)
         content = re.sub(r"(?m)^((?:STRAVA_)?CONNECTOR_VERSION)=.*$", lambda m: m[1] + "=" + version, content)

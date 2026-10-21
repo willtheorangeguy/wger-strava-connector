@@ -46,11 +46,12 @@ def test_release_downloads_target_actual_image_and_version(tmp_path, version):
     assets = importlib.util.module_from_spec(assets_spec)
     assets_spec.loader.exec_module(assets)
     assets.render("ghcr.io/fork-owner/custom-connector", version, tmp_path)
-    assert {p.name for p in tmp_path.iterdir()} == {"docker-compose.yml", "env.example", "docker-compose.wger.yml", "wger.env.example"}
-    for name in ("docker-compose.yml", "docker-compose.wger.yml"):
+    assert {p.name for p in tmp_path.iterdir()} == {"docker-compose.yml", "env.example", "docker-compose.wger.yml", "wger.env.example", "docker-compose.media.yml"}
+    for name in ("docker-compose.yml", "docker-compose.wger.yml", "docker-compose.media.yml"):
         content = (tmp_path / name).read_text()
         assert "ghcr.io/fork-owner/custom-connector" in content
         assert "CONNECTOR_VERSION:-" + version in content
         assert "build:" not in content and "STRAVA_CONNECTOR_PATH" not in content
+    assert 'CONNECTOR_VERSION:-'+version+'}-media' in (tmp_path/'docker-compose.media.yml').read_text()
     assert "CONNECTOR_VERSION=" + version + "\n" in (tmp_path / "env.example").read_text()
     assert "STRAVA_CONNECTOR_VERSION=" + version + "\n" in (tmp_path / "wger.env.example").read_text()
