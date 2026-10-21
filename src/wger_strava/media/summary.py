@@ -21,8 +21,7 @@ def demo():
     return {'title': 'Upper body', 'date': 'TUESDAY, OCTOBER 20', 'duration': '53:08',
             'exercise_count': 8, 'set_count': 26, 'volume': '12,000', 'units': 'lb',
             'primary': ['chest', 'back', 'shoulders'], 'secondary': ['biceps', 'triceps'],
-            'comparison': 'An elephant-sized effort.', 'comparison_note':
-            'About the weight of a large elephant.', 'comparison_object': 'elephant'}
+            'volume_kg': Decimal(12000) / POUNDS_PER_KG}
 
 
 def formatted_volume(sets, units='lb'):

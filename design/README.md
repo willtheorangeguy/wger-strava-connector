@@ -2,18 +2,26 @@
 
 Branch: `feat/workout-summary-images`. This is a design/browser prototype, **not integrated into production sync**. No new release is published by this milestone.
 
-Two proposed directions, each with a workout summary and an elephant comparison:
+Selected direction: **Midnight blue**, with the bottom tagline removed and front/back muscle diagrams enlarged from 370 px to 510 px tall. The light variant remains available for reference.
 
 - Light: wger navy/blue, white anatomy panel, restrained statistics.
 - Dark: deep navy, brighter muscle highlights, a stronger feed contrast.
 
-![Light and dark card concepts](previews/concepts.png)
+![Selected dark workout cards](previews/concepts.png)
 
 Individual previews: [light summary](previews/light-summary.png), [light comparison](previews/light-comparison.png), [dark summary](previews/dark-summary.png), [dark comparison](previews/dark-comparison.png).
 
-The sample 12,000 lb total is synthetic design data. The elephant is an approximate visual analogy, not a biological measurement. The anatomy is original schematic vector artwork: primary/secondary colors identify muscle metadata, not activation intensity. No Hevy artwork is bundled.
+The sample 12,000 lb total is synthetic design data; it selects an orca at approximately 1.1× its reference weight. The anatomy is original schematic vector artwork: primary/secondary colors identify muscle metadata, not activation intensity. No Hevy artwork is bundled.
 
-Inter Variable v4.1 is bundled from the [official Inter repository](https://github.com/rsms/inter/tree/v4.1), with its SIL Open Font License in `src/wger_strava/media/assets/INTER-LICENSE.txt`. All anatomy and elephant SVG paths are original project assets under this repository's MIT license.
+## Weight comparisons
+
+All 30 supplied examples are included, from a 1,600 kg hippopotamus through the 6 billion kg Great Pyramid of Giza. See the [illustrated catalog](previews/comparison-catalog.png) and [reference data](../src/wger_strava/media/comparisons.py).
+
+Reference masses are the approximate kilogram figures supplied for this design. Displayed pounds are calculated from kg rather than storing a second, independently rounded weight. These examples describe illustrative animals, vehicles and structures, not verified specifications for particular specimens or models.
+
+The renderer selects the closest mass using the unrounded workout volume in kg; an exact tie selects the lighter reference. It shows a fraction or multiple of that reference, including totals below the smallest example and above the largest. Very small fractions display as a percentage. Zero recorded external load has no object equivalence. Changing display units preserves the selected subject. Every reference has an original local SVG illustration; rendering makes no remote image requests.
+
+Inter Variable v4.1 is bundled from the [official Inter repository](https://github.com/rsms/inter/tree/v4.1), with its SIL Open Font License in `src/wger_strava/media/assets/INTER-LICENSE.txt`. All anatomy and comparison SVG paths are original project assets under this repository's MIT license.
 
 ## Render the concepts
 
@@ -22,7 +30,7 @@ docker compose -f compose.media.yaml build
 docker compose -f compose.media.yaml run --rm preview
 ```
 
-Four 1080×1080 PNGs and a combined `concepts.png` review sheet are written to `design/previews/`. Templates and fonts are entirely local; the renderer blocks network requests. The Debian/Python base is pinned by digest. Playwright 1.63.0 installs only its matching Chromium build, used for both interactive and headless operation.
+Four 1080×1080 PNGs, the selected dark pair in `concepts.png`, and a 30-subject `comparison-catalog.png` are written to `design/previews/`. Templates and fonts are entirely local; the renderer blocks network requests. The Debian/Python base is pinned by digest. Playwright 1.63.0 installs only its matching Chromium build, used for both interactive and headless operation.
 
 ## Login on a headless Docker host
 
@@ -54,4 +62,4 @@ This uses real Chromium with a mock website. It exercises file selection, saving
 
 ## Approval gates and next work
 
-The agreed plan requires visual review of these two concepts before implementing the full media worker. After a style is chosen and live browser feasibility is established, add the durable outbox, wger muscle metadata snapshots, automatic attachment to confirmed export IDs, recovery/status commands, both architecture builds and GHCR release integration. Keep current API exports independent of browser/media failures.
+The dark direction has been selected and the requested visual revisions are included. Live browser feasibility remains to be established before adding the durable outbox, wger muscle metadata snapshots, automatic attachment to confirmed export IDs, recovery/status commands, both architecture builds and GHCR release integration. Keep current API exports independent of browser/media failures.

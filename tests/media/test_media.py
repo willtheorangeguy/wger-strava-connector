@@ -14,8 +14,9 @@ import pytest
 pytest.importorskip('playwright.sync_api', reason='Media browser tests run in Dockerfile.media')
 from playwright.sync_api import sync_playwright
 from wger_strava.media.browser import attach_mock, profile_lock
+from wger_strava.media.comparisons import REFERENCES
 from wger_strava.media.render import html, render
-from wger_strava.media.summary import demo, formatted_volume, volume
+from wger_strava.media.summary import POUNDS_PER_KG, demo, formatted_volume, volume
 
 
 @pytest.fixture(scope='module',autouse=True)
@@ -87,13 +88,44 @@ def sign_in(page, origin, athlete='123456'):
 
 def test_four_cards_are_exact_size_and_render_deterministically(cards,tmp_path):
     render(tmp_path)
-    individual = [path for path in cards.glob('*.png') if path.name != 'concepts.png']
+    individual = [path for path in cards.glob('*.png') if path.stem.startswith(('light-', 'dark-'))]
     for path in individual:
         raw=path.read_bytes()
         assert struct.unpack('>II',raw[16:24]) == (1080,1080)
         assert raw == (tmp_path/path.name).read_bytes()
     assert len(individual) == 4
     assert (cards/'concepts.png').read_bytes() == (tmp_path/'concepts.png').read_bytes()
+    assert (cards/'comparison-catalog.png').read_bytes() == (tmp_path/'comparison-catalog.png').read_bytes()
+
+
+def test_selected_dark_layout_and_all_comparison_subjects_fit():
+    with sync_playwright() as p:
+        browser=p.chromium.launch(channel='chromium')
+        try:
+            page=browser.new_page(viewport={'width':1080,'height':1080})
+            page.set_content(html(demo(),'dark','summary'))
+            page.evaluate('document.fonts.ready')
+            assert page.locator('.footer').count()==0
+            diagram=page.locator('.figure svg').first.bounding_box()
+            assert diagram['height'] >= 500
+            assert page.locator('.muscle-list').bounding_box()['y'] < 1020
+            for reference in REFERENCES:
+                pounds=Decimal(reference.kg)*POUNDS_PER_KG
+                facts={**demo(),'volume_kg':Decimal(reference.kg),'volume':f'{pounds:,.0f}'}
+                page.set_content(html(facts,'dark','comparison'))
+                page.evaluate('document.fonts.ready')
+                assert page.locator('h1').inner_text()==reference.name
+                assert page.locator('.animal svg').count()==1
+                assert page.locator('.footer').count()==0
+                assert page.locator('.hero-number').evaluate('(e) => e.scrollWidth <= e.clientWidth'), reference.key
+                assert page.locator('h1').evaluate('(e) => e.scrollHeight <= e.clientHeight'), reference.key
+                assert page.locator('.sub').bounding_box()['y']+page.locator('.sub').bounding_box()['height'] < 540, reference.key
+            # The largest catalog total must fit the summary's narrower column too.
+            page.set_content(html(facts,'dark','summary'))
+            page.evaluate('document.fonts.ready')
+            assert page.locator('.metric .value').first.evaluate('(e) => e.scrollWidth <= e.clientWidth')
+        finally:
+            browser.close()
 
 
 def test_browser_upload_persists_after_restart_and_never_repeats(cards,tmp_path):
