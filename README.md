@@ -1,8 +1,8 @@
-# wger → Strava connector
+# wger â†’ Strava connector
 
 Export completed **wger strength workouts** to Strava, including individual exercises, sets, repetitions, weights, and timed sets. A separate Docker service reads your wger API and uploads a structured `WeightTraining` activity to Strava. It does not modify wger.
 
-Version 0.2.0 adds experimental [workout cards and headless-browser login tools](design/README.md): dark muscle-summary cards, 30 illustrated weight comparisons, and saved browser login. A live test attached both sample cards to a consenting account's private activity. Automatic image generation/attachment during production workout sync remains pending.
+Version 0.2.0 adds experimental [workout cards and headless-browser login tools](design/README.md): dark muscle-summary cards, 30 illustrated weight comparisons, and saved browser login. Version 0.2.1 refines 19 comparison illustrations, including distinct animal profiles, detailed vehicles, landmarks, a side-view airliner, and a carrier with parked aircraft. A live test attached both sample cards to a consenting account's private activity. Automatic image generation/attachment during production workout sync remains pending.
 
 Uses Strava's documented [strength JSON upload format](https://developers.strava.com/docs/uploads/#json---strength-training-limited), rather than putting the exercises only in an activity description. Exercise names map to Strava's supported identifiers so Strava can display the workout log and muscle map. Strava may group variants under a more general exercise.
 
@@ -15,7 +15,7 @@ Create an empty directory and put these two files in it:
 - `docker-compose.yml`
 - `.env`: copy `.env.example` from this repository, or rename the release download `env.example` to `.env`.
 
-No source checkout, Python installation, or local image build is needed. Download the files from [release v0.2.0](https://github.com/willtheorangeguy/wger-strava-connector/releases/tag/v0.2.0). The Compose file pulls `ghcr.io/willtheorangeguy/wger-strava-connector:0.2.0`. Each release includes all four standalone/existing-wger setup files as downloads after its container publishing workflow completes.
+No source checkout, Python installation, or local image build is needed. Download the files from [release v0.2.1](https://github.com/willtheorangeguy/wger-strava-connector/releases/tag/v0.2.1). The Compose file pulls `ghcr.io/willtheorangeguy/wger-strava-connector:0.2.1`. Each release includes all four standalone/existing-wger setup files as downloads after its container publishing workflow completes.
 
 Fill in `.env`:
 
@@ -100,7 +100,7 @@ docker compose -f docker-compose.media.yml run --rm preview
 docker compose -f docker-compose.media.yml run --rm --service-ports media-login
 ```
 
-These commands pull `ghcr.io/willtheorangeguy/wger-strava-connector:0.2.0-media`. The first writes sample cards and the comparison catalog to `previews/`. The second opens a browser through `http://localhost:6080/vnc.html`; use its printed temporary viewer password, sign into Strava manually, and stop with Ctrl+C to save the session. No API credentials are needed for these two tools. For a remote Docker host, use the SSH tunnel in the [browser instructions](design/README.md).
+These commands pull `ghcr.io/willtheorangeguy/wger-strava-connector:0.2.1-media`. The first writes sample cards and the comparison catalog to `previews/`. The second opens a browser through `http://localhost:6080/vnc.html`; use its printed temporary viewer password, sign into Strava manually, and stop with Ctrl+C to save the session. No API credentials are needed for these two tools. For a remote Docker host, use the SSH tunnel in the [browser instructions](design/README.md).
 
 The `-media` image is separate from the regular connector image. It contains Chromium and the image renderer. It currently renders synthetic sample data and provides browser login; it does not automatically attach images to future wger exports. Browser photo upload has been proven in a private operator-run test, documented in [live validation](design/LIVE-VALIDATION.md). No public live-upload CLI is included in this release.
 

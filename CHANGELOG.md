@@ -1,6 +1,14 @@
 # Changelog
 
-## 0.2.0 — 2026-10-20
+## 0.2.1 — 2026-10-21
+
+- Replace 19 weight comparison illustrations with more recognizable animal profiles, vehicles, machinery, landmarks, and Saturn V details while retaining the shared palette and canvas.
+- Correct pickup windows, remove the forklift load, contain whale shark spots within the body, and level the excavator base with a reversed, smooth bucket.
+- Add a side-view airliner and a carrier silhouette with parked aircraft, bridge windows, and hull details.
+- Credit the carrier silhouette by TheFrenchKing under CC BY-SA 4.0, with source and adaptation details bundled in the media assets.
+- Refresh the illustrated catalog preview and advance the connector and experimental-media setup defaults to 0.2.1.
+
+## 0.2.0 â€” 2026-10-20
 
 - Add experimental dark workout-summary cards with enlarged front/back muscle diagrams and 30 original illustrated weight comparisons.
 - Add deterministic, offline Chromium rendering with a bundled font, consistent kg/lb comparison selection, and zero-load handling.
@@ -10,7 +18,7 @@
 - Gate release publishing on connector and media tests; attach version-matched setup files and card previews.
 - Automatic image generation/attachment for completed wger exports is not included yet. The existing API export flow remains independent of the media prototype.
 
-## 0.1.0 — 2026-10-20
+## 0.1.0 â€” 2026-10-20
 
 - Export completed wger sessions as Strava strength JSON, with mapped exercises, actual repetitions/load, and timed sets.
 - Docker deployment and an overlay for an existing wger Compose stack.
