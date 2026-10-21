@@ -2,7 +2,7 @@
 # The overlay assumes wger's web service is on the default network.
 services:
   strava-connector:
-    image: ${STRAVA_CONNECTOR_IMAGE:-ghcr.io/willtheorangeguy/wger-strava-connector}:${STRAVA_CONNECTOR_VERSION:-0.1.0}
+    image: ${STRAVA_CONNECTOR_IMAGE:-ghcr.io/willtheorangeguy/wger-strava-connector}:${STRAVA_CONNECTOR_VERSION:-0.2.0}
     environment:
       WGER_BASE_URL: ${STRAVA_WGER_BASE_URL:-http://web:8000}
       WGER_TOKEN: ${STRAVA_WGER_TOKEN:?Set STRAVA_WGER_TOKEN}

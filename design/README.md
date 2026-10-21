@@ -1,6 +1,6 @@
 # Workout images: review milestone
 
-Branch: `feat/workout-summary-images`. This is a design/browser prototype, **not integrated into production sync**. No new release is published by this milestone.
+Included in v0.2.0 as experimental rendering/browser tools, **not integrated into production sync**. See the [main README](../README.md#experimental-workout-image-tools) for the published `-media` image and downloadable Compose setup. The checkout-based commands below remain useful for development.
 
 Selected direction: **Midnight blue**, with the bottom tagline removed and front/back muscle diagrams enlarged from 370 px to 510 px tall. The light variant remains available for reference.
 

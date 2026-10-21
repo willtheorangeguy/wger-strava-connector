@@ -2,11 +2,11 @@
 
 Export completed **wger strength workouts** to Strava, including individual exercises, sets, repetitions, weights, and timed sets. A separate Docker service reads your wger API and uploads a structured `WeightTraining` activity to Strava. It does not modify wger.
 
-The `feat/workout-summary-images` branch contains an experimental [image design and headless-browser login milestone](design/README.md). It is awaiting visual review and live Strava browser verification; production sync does not attach images yet.
+Version 0.2.0 adds experimental [workout cards and headless-browser login tools](design/README.md): dark muscle-summary cards, 30 illustrated weight comparisons, and saved browser login. A live test attached both sample cards to a consenting account's private activity. Automatic image generation/attachment during production workout sync remains pending.
 
 Uses Strava's documented [strength JSON upload format](https://developers.strava.com/docs/uploads/#json---strength-training-limited), rather than putting the exercises only in an activity description. Exercise names map to Strava's supported identifiers so Strava can display the workout log and muscle map. Strava may group variants under a more general exercise.
 
-This initial version is tested against the [wger addon harness](https://github.com/willtheorangeguy/wger-addon-harness), pinned to wger `2.8.0-dev.1`. It requires sessions with `datetime_start`, `datetime_end`, and logs linked by `session`. Legacy wger versions with date/time-only sessions are not supported. No live Strava account has been used to validate this connector yet; the test suite uses a local API double implementing the documented upload contract.
+The strength exporter is tested against the [wger addon harness](https://github.com/willtheorangeguy/wger-addon-harness), pinned to wger `2.8.0-dev.1`. It requires sessions with `datetime_start`, `datetime_end`, and logs linked by `session`. Legacy wger versions with date/time-only sessions are not supported. Automated strength-upload tests use a local API double implementing the documented contract; the separate live browser photo test does not validate strength JSON uploads against a real account.
 
 ## Docker setup
 
@@ -15,7 +15,7 @@ Create an empty directory and put these two files in it:
 - `docker-compose.yml`
 - `.env`: copy `.env.example` from this repository, or rename the release download `env.example` to `.env`.
 
-No source checkout, Python installation, or local image build is needed. Download the files from [release v0.1.0](https://github.com/willtheorangeguy/wger-strava-connector/releases/tag/v0.1.0). The Compose file pulls `ghcr.io/willtheorangeguy/wger-strava-connector:0.1.0`. Each release includes all four standalone/existing-wger setup files as downloads after its container publishing workflow completes.
+No source checkout, Python installation, or local image build is needed. Download the files from [release v0.2.0](https://github.com/willtheorangeguy/wger-strava-connector/releases/tag/v0.2.0). The Compose file pulls `ghcr.io/willtheorangeguy/wger-strava-connector:0.2.0`. Each release includes all four standalone/existing-wger setup files as downloads after its container publishing workflow completes.
 
 Fill in `.env`:
 
@@ -90,6 +90,19 @@ docker compose -f docker-compose.yml -f docker-compose.wger.yml up -d strava-con
 Alternatively, copy the `strava-connector` service and the `strava_connector_state` volume declaration into your existing Compose file. When switching from the standalone deployment, migrate its state volume before starting; the two examples use different named volumes.
 
 For maintenance, stop only `strava-connector`, run commands with the same two `-f` arguments, then start it again. To upgrade either deployment, change its version setting, pull, and run `up -d` for the connector service. Keep the state volume. For a fork or an alternative registry, set `CONNECTOR_IMAGE` (standalone) or `STRAVA_CONNECTOR_IMAGE` (existing stack) to the image repository without its tag.
+
+## Experimental workout image tools
+
+Download `docker-compose.media.yml` from the same release, then run:
+
+```sh
+docker compose -f docker-compose.media.yml run --rm preview
+docker compose -f docker-compose.media.yml run --rm --service-ports media-login
+```
+
+These commands pull `ghcr.io/willtheorangeguy/wger-strava-connector:0.2.0-media`. The first writes sample cards and the comparison catalog to `previews/`. The second opens a browser through `http://localhost:6080/vnc.html`; use its printed temporary viewer password, sign into Strava manually, and stop with Ctrl+C to save the session. No API credentials are needed for these two tools. For a remote Docker host, use the SSH tunnel in the [browser instructions](design/README.md).
+
+The `-media` image is separate from the regular connector image. It contains Chromium and the image renderer. It currently renders synthetic sample data and provides browser login; it does not automatically attach images to future wger exports. Browser photo upload has been proven in a private operator-run test, documented in [live validation](design/LIVE-VALIDATION.md). No public live-upload CLI is included in this release.
 
 ## Data and recovery
 
