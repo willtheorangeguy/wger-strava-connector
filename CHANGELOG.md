@@ -8,7 +8,7 @@
 - Credit the carrier silhouette by TheFrenchKing under CC BY-SA 4.0, with source and adaptation details bundled in the media assets.
 - Refresh the illustrated catalog preview and advance the connector and experimental-media setup defaults to 0.2.1.
 
-## 0.2.0 â€” 2026-10-20
+## 0.2.0 — 2026-10-20
 
 - Add experimental dark workout-summary cards with enlarged front/back muscle diagrams and 30 original illustrated weight comparisons.
 - Add deterministic, offline Chromium rendering with a bundled font, consistent kg/lb comparison selection, and zero-load handling.
@@ -18,7 +18,7 @@
 - Gate release publishing on connector and media tests; attach version-matched setup files and card previews.
 - Automatic image generation/attachment for completed wger exports is not included yet. The existing API export flow remains independent of the media prototype.
 
-## 0.1.0 â€” 2026-10-20
+## 0.1.0 — 2026-10-20
 
 - Export completed wger sessions as Strava strength JSON, with mapped exercises, actual repetitions/load, and timed sets.
 - Docker deployment and an overlay for an existing wger Compose stack.

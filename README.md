@@ -1,4 +1,4 @@
-# wger â†’ Strava connector
+# wger → Strava connector
 
 Export completed **wger strength workouts** to Strava, including individual exercises, sets, repetitions, weights, and timed sets. A separate Docker service reads your wger API and uploads a structured `WeightTraining` activity to Strava. It does not modify wger.
 
