@@ -26,24 +26,28 @@
 
 ## Installation
 
-Download `docker-compose.yml` and `env.example` from [v0.3.0](https://github.com/willtheorangeguy/wger-strava-connector/releases/tag/v0.3.0). Rename `env.example` to `.env` and set your wger token, Strava application credentials and timezone. Docker Compose pulls the published image.
+Current source version `0.3.0` was not yet published as a release on 2026-10-22. Build the checkout for the features documented here. See [installation](docs/installation.md) for the published version.
 
 ```sh
-docker compose pull
-docker compose run --rm connector auth-url
-docker compose run --rm -i connector auth-complete
+git clone https://github.com/willtheorangeguy/wger-strava-connector.git
+cd wger-strava-connector
+cp .env.example .env
+# Fill in the source API key/token, Strava app credentials and timezone.
+docker compose -f compose.build.yaml build
+docker compose -f compose.build.yaml run --rm connector auth-url
+docker compose -f compose.build.yaml run --rm -i connector auth-complete
 ```
 
-Open the consent URL, then paste the full localhost callback address into `auth-complete`. See [getting started](docs/getting-started.md).
+Open the consent URL and paste the complete localhost callback into the prompt. Follow [getting started](docs/getting-started.md) for account setup.
 
 ## Usage
 
 ```sh
-docker compose run --rm connector preview
-docker compose run --rm connector exercises
-docker compose run --rm connector map 123 BARBELL_BENCH_PRESS
-docker compose run --rm connector sync
-docker compose up -d
+docker compose -f compose.build.yaml run --rm connector preview
+docker compose -f compose.build.yaml run --rm connector exercises
+docker compose -f compose.build.yaml run --rm connector map 123 BARBELL_BENCH_PRESS
+docker compose -f compose.build.yaml run --rm connector sync
+docker compose -f compose.build.yaml up -d
 ```
 
 Replace `123` with a missing wger exercise ID from `preview`. The watcher runs every 15 minutes by default. Stop it before stateful maintenance. Keep the state volume to prevent duplicate exports. Requires timestamped wger sessions; tested with wger `2.8.0-dev.1`.
@@ -63,7 +67,7 @@ Historical prototype notes remain in [design/](design/README.md). Current setup 
 
 ## Support
 
-Open a [GitHub Discussion](https://github.com/willtheorangeguy/wger-strava-connector/discussions/new) or file an [issue](https://github.com/willtheorangeguy/wger-strava-connector/issues/new/choose).
+Open an [issue](https://github.com/willtheorangeguy/wger-strava-connector/issues/new/choose).
 
 ## Contributing
 

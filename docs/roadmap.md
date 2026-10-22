@@ -9,4 +9,4 @@ Current boundaries come from the implemented export and recovery behavior. They 
 - Old exports do not automatically receive image jobs. Browser automation depends on the live site and a valid saved session.
 - Muscle diagrams use available source metadata. Unrecognized names and unavailable exercise metadata are retained in the job for inspection.
 
-Review an affected workout with `docker compose run --rm connector preview` while the watcher is stopped. See [usage](usage.md) for recovery and [workout images](media.md) for image behavior.
+Review an affected workout with `docker compose -f compose.build.yaml run --rm connector preview` while the watcher is stopped. See [usage](usage.md) for recovery and [workout images](media.md) for image behavior.

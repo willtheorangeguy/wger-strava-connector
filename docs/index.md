@@ -11,13 +11,13 @@ Export completed wger strength workouts as structured Strava `WeightTraining` ac
 
 ## Quick start
 
-Download the release Compose/environment files, configure credentials, then authorize and inspect your first workouts:
+Build the current source checkout and configure `.env` as described in [getting started](getting-started.md), then authorize and inspect your first workouts:
 
 ```sh
-docker compose pull
-docker compose run --rm connector auth-url
-docker compose run --rm -i connector auth-complete
-docker compose run --rm connector preview
+docker compose -f compose.build.yaml build
+docker compose -f compose.build.yaml run --rm connector auth-url
+docker compose -f compose.build.yaml run --rm -i connector auth-complete
+docker compose -f compose.build.yaml run --rm connector preview
 ```
 
 Follow [getting started](getting-started.md) for prerequisites, exercise approvals and the first export.
@@ -37,4 +37,4 @@ Follow [getting started](getting-started.md) for prerequisites, exercise approva
 
 ## Support
 
-Open a [discussion](https://github.com/willtheorangeguy/wger-strava-connector/discussions/new) or an [issue](https://github.com/willtheorangeguy/wger-strava-connector/issues/new/choose). Follow the org-wide [contributing guide](https://github.com/willtheorangeguy/.github/blob/main/CONTRIBUTING.md).
+Open an [issue](https://github.com/willtheorangeguy/wger-strava-connector/issues/new/choose). Follow the org-wide [contributing guide](https://github.com/willtheorangeguy/.github/blob/main/CONTRIBUTING.md).

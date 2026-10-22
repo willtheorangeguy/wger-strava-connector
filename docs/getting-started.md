@@ -2,91 +2,75 @@
 
 ## Prerequisites
 
-Use Docker with Compose v2 and a reachable wger `2.8.0-dev.1` API. You need its legacy API token and your own Strava application. Check Docker with `docker compose version`.
+Use Docker with Compose v2, a reachable wger 2.8.0-dev.1 API and a legacy Token API key. Register your own Strava application with callback domain `localhost`. Check Docker with `docker compose version`.
 
 ## Install
 
-The connector is an always-running companion service to wger. After one-time
-Strava authorization and exercise mapping, `docker compose up -d` starts its
-`watch` loop. Keep wger and the connector running together; daily manual `sync`
-commands are unnecessary. The existing-stack overlay runs the same watcher next
-to wger on its Compose network, while standalone deployment reaches wger by URL.
-
-The watcher checks immediately, then every `SYNC_INTERVAL_SECONDS` (900 seconds
-by default). When a session has an end time and is at least `SETTLE_SECONDS`
-(300 seconds) old, it automatically uploads the eligible workout and polls Strava
-until processing finishes. With defaults, discovery normally takes 5–20 minutes
-after completion. Previously exported sessions are not uploaded again.
-
-Temporary wger/Strava API failures are logged and checked again on the next cycle.
-`restart: unless-stopped` restarts the container after a process failure or Docker
-restart. Keep its state volume. Missing exercise mappings still hold a workout for
-review, and uncertain uploads still require reconciliation to prevent duplicates.
-
-Create an empty directory and put these two files in it:
-
-- `docker-compose.yml`
-- `.env`: copy `.env.example` from this repository, or rename the release download `env.example` to `.env`.
-
-No source checkout, Python installation, or local image build is needed. Download the files from [release v0.3.0](https://github.com/willtheorangeguy/wger-strava-connector/releases/tag/v0.3.0). The Compose file pulls `ghcr.io/willtheorangeguy/wger-strava-connector:0.3.0`. Each release includes all four standalone/existing-wger setup files as downloads after its container publishing workflow completes.
-
-Fill in `.env`:
-
-- `WGER_BASE_URL`: your wger server, reachable **from the connector container**. The example uses the local harness on port 8101.
-- `WGER_TOKEN`: your wger **legacy API token** from your account settings.
-- `STRAVA_CLIENT_ID` and `STRAVA_CLIENT_SECRET`: create your own application at [Strava API settings](https://www.strava.com/settings/api). Set its authorization callback domain to `localhost`.
-- `WORKOUT_TIMEZONE`: your IANA timezone, for example `America/Edmonton`.
-- `EXPORT_SINCE`: optional `YYYY-MM-DD` boundary at midnight UTC. Leave blank to start with today's UTC date, saved on the first preview/sync. Set a date explicitly to backfill older sessions.
-- `CONNECTOR_VERSION`: the released image version, without `v`. Release downloads select their matching version automatically.
-
-Then pull the image and authorize your Strava account once:
+This guide covers the current source version `0.3.0`. On 2026-10-22, the latest published release was `v0.2.1`; a `v0.3.0` release download was not available. Build the checkout to use the current automatic image worker and recovery behavior.
 
 ```sh
-docker compose pull
-docker compose run --rm connector auth-url
+git clone https://github.com/willtheorangeguy/wger-strava-connector.git
+cd wger-strava-connector
+cp .env.example .env
 ```
 
-Open the printed URL and allow the requested permissions. Your browser will redirect to `http://localhost/strava/callback?...`. **A connection error on that page is expected:** copy the complete URL from the address bar. No callback server or public port is needed.
+Fill in `WGER_BASE_URL` (origin reachable from the container), `WGER_TOKEN`, `STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET` and `WORKOUT_TIMEZONE`. The source API default is `http://host.docker.internal:8101`. Set `EXPORT_SINCE=2026-01-01` for historical backfill; an empty value saves today's UTC date on the first preview/sync as a UTC-midnight boundary.
 
 ```sh
-docker compose run --rm -i connector auth-complete
+docker compose -f compose.build.yaml build
+docker compose -f compose.build.yaml run --rm connector auth-url
 ```
 
-Paste that complete callback URL at the prompt. The URL contains a temporary authorization code: keep it private. Authorization checks the state nonce, its 15-minute expiry, and the granted scopes. Requested scopes are `read` (verify your athlete), `activity:write` (uploads), and `activity:read_all` (access to private activities for recovery/inspection). Tokens are stored in the state volume and rotated automatically; they do not belong in `.env`.
+## First run
 
-```sh
-docker compose run --rm connector check
-docker compose run --rm connector preview
-docker compose run --rm connector exercises
-docker compose run --rm connector map 123 BARBELL_BENCH_PRESS
-docker compose run --rm connector map 456 PLANK_GENERIC
-docker compose run --rm connector preview
-docker compose run --rm connector sync
-docker compose up -d
-docker compose logs -f connector
-```
+1. Open the printed Strava consent URL. Grant `read`, `activity:write`, and `activity:read_all`.
+2. The browser redirects to a localhost callback and displays an expected connection error. Copy the full address from its address bar. No callback server or public connector port is required.
+3. Complete authorization within 15 minutes, using the same state volume:
 
-Replace `123` and `456` with the wger exercise IDs listed as missing by `preview`. Look up their names in wger's exercise page/API (`/api/v2/exerciseinfo/<ID>/`). Choose an identifier from `exercises`; `mappings` lists your approvals. An unmapped or unsupported set holds the **whole workout**, so the activity is never silently missing exercises.
+   ```sh
+   docker compose -f compose.build.yaml run --rm -i connector auth-complete
+   ```
 
-Strava processes uploads asynchronously. The first `sync` usually records `processing`; another sync or the background polling cycle records the resulting activity ID. Background sync runs every 15 minutes by default, uploading at most 10 workouts per cycle. A finished session must be at least 5 minutes old to allow recently saved sets to settle. Unfinished and future sessions are excluded.
+   Paste the full callback URL at the prompt. It contains a temporary authorization code, so keep it private. Success returns `authorized_athlete` and stores rotating tokens in the journal.
 
-Run **one connector per wger account and Strava athlete**. Stop the background service before running commands that open the state volume:
+4. Check the bound accounts and inspect source selection:
 
-```sh
-docker compose stop connector
-docker compose run --rm connector status
-# Make mappings, preview, reconcile, or authorize again here.
-docker compose up -d
-```
+   ```sh
+   docker compose -f compose.build.yaml run --rm connector check
+   docker compose -f compose.build.yaml run --rm connector preview
+   ```
 
-State is bound to the source username/server and destination athlete/application. Keep the state volume: it contains your tokens, mappings, date boundary, and upload journal. Deleting it can cause duplicate exports. Back it up with the service stopped. Imported Hevy workouts in wger are eligible too; if Hevy already exports them to Strava, use one export path to avoid duplicates across apps. Strava's duplicate detection does not guarantee cross-app deduplication.
+   `check` returns source identity and athlete ID. `preview` reports session keys, state, missing mappings and problems without uploading activities.
+
+5. Approve each missing exercise ID with a supported identifier before exporting.
+
+   ```sh
+   docker compose -f compose.build.yaml run --rm connector exercises
+   docker compose -f compose.build.yaml run --rm connector map 123 BARBELL_BENCH_PRESS
+   docker compose -f compose.build.yaml run --rm connector preview
+   ```
+
+   Replace the example ID with an actual source exercise ID from preview. Unmapped/invalid completed sets hold the whole workout.
+
+6. Export once, then start continuous synchronization:
+
+   ```sh
+   docker compose -f compose.build.yaml run --rm connector sync
+   docker compose -f compose.build.yaml up -d
+   docker compose -f compose.build.yaml logs -f connector
+   ```
+
+   A successful submission commonly reports `processing` until a later sync polls the activity ID. The watcher checks immediately, then every 900 seconds by default, with a 300-second settling delay and at most ten new uploads per cycle. Unfinished/future data remains excluded. Temporary API failures are logged for a later cycle; uncertain writes stay held for explicit recovery.
 
 ## What just happened
 
-The source account and destination athlete are bound to a persistent journal. The watcher exports completed, settled sessions and polls asynchronous Strava uploads. `preview` can write the initial date boundary but never uploads an activity.
+The connector bound one wger account, Strava application and athlete to a persistent journal. It exported completed timestamped sessions with session-linked logs without modifying wger. Source edits report changed rather than updating an existing activity.
+
+Stop the watcher before stateful one-off maintenance and restart it afterwards. Keep state: it contains tokens, account bindings, mappings, boundary and upload history. Deleting it can duplicate exports. Imported Hevy workouts are eligible; select one Strava export path to avoid cross-app duplicates.
 
 ## Next steps
 
-- Use [configuration](configuration.md) for environment defaults and the existing-stack naming scheme.
-- Read [deployment](deployment.md) before changing state volumes.
-- Enable optional [workout images](media.md) after core exports work.
+- [Installation](installation.md) explains released versions and local builds.
+- [Usage](usage.md) covers selection, data fidelity and recovery.
+- [Configuration](configuration.md) lists defaults and overlay variables.
+- [Workout images](media.md) explains the companion browser login and durable receipts.

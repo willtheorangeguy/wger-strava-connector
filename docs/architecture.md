@@ -48,4 +48,4 @@ design/               Historical art reviews and validation
 scripts/              Release version and asset generation
 ```
 
-Trace a run with `docker compose run --rm connector preview`, then compare `status` after `sync` as described in [usage](usage.md).
+Trace a run with `docker compose -f compose.build.yaml run --rm connector preview`, then compare `status` after `sync` as described in [usage](usage.md).

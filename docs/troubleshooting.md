@@ -5,9 +5,9 @@
 Stop the watcher before maintenance and restart it afterwards:
 
 ```sh
-docker compose stop connector
-docker compose run --rm connector status
-docker compose up -d
+docker compose -f compose.build.yaml stop connector
+docker compose -f compose.build.yaml run --rm connector status
+docker compose -f compose.build.yaml up -d
 ```
 
 ## Authorization state is missing, expired or does not match

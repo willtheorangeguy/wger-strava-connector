@@ -2,20 +2,11 @@
 
 ## Requirements
 
-Docker Engine or Docker Desktop with Compose v2 supports the released Linux amd64 and arm64 images. Source installation requires Python 3.12 or later. wger must expose timestamped sessions and session-linked logs. Older date/time-only session APIs are unsupported.
+Docker Engine or Docker Desktop with Compose v2 supports the Linux amd64/arm64 deployments. Source development requires Python 3.12+. The tested source API is wger `2.8.0-dev.1`. Timestamped sessions with session-linked logs are required; legacy date/time-only sessions are unsupported.
 
 ## Install methods
 
-=== "Released container"
-
-    Download `docker-compose.yml` and `env.example` from [v0.3.0](https://github.com/willtheorangeguy/wger-strava-connector/releases/tag/v0.3.0). Rename `env.example` to `.env`, configure credentials, then pull:
-
-    ```sh
-    docker compose pull
-    docker compose run --rm connector --help
-    ```
-
-=== "Source container"
+=== "Current source"
 
     ```sh
     git clone https://github.com/willtheorangeguy/wger-strava-connector.git
@@ -25,7 +16,18 @@ Docker Engine or Docker Desktop with Compose v2 supports the released Linux amd6
     docker compose -f compose.build.yaml run --rm connector --help
     ```
 
-    Use `-f compose.build.yaml` for subsequent commands. It shares the standalone project and state volume. Stop the other deployment first.
+    Configure your actual credentials before following [getting started](getting-started.md). Keep using `-f compose.build.yaml` for this source deployment.
+
+=== "Published release"
+
+    On 2026-10-22, [v0.2.1](https://github.com/willtheorangeguy/wger-strava-connector/releases/tag/v0.2.1) was the latest published release. Download its `docker-compose.yml` and `env.example`, rename the environment file to `.env` and supply credentials:
+
+    ```sh
+    docker compose pull
+    docker compose run --rm connector --help
+    ```
+
+    Use that release's own matched files and behavior. The current source version `0.3.0` and its automatic-worker features were not yet a published release. Use the source tab for the behavior documented by this site.
 
 === "Python development"
 
@@ -37,16 +39,16 @@ Docker Engine or Docker Desktop with Compose v2 supports the released Linux amd6
     wger-strava --help
     ```
 
-    Set environment variables explicitly. The Python entry point does not load `.env` and defaults `DATA_DIR` to `/data`; use a writable local directory such as `./runtime`.
+    Export settings yourself: the CLI does not load `.env`. Set `DATA_DIR=./runtime` for writable host state instead of the default `/data`.
 
 ## Verify the installation
 
-`--help` prints the available subcommands without opening state or contacting an API. Complete [getting started](getting-started.md) for an authenticated `check` and `preview`.
+`--help` prints subcommands without opening state or contacting APIs. After authorization, run the `check` and `preview` steps in [getting started](getting-started.md).
 
 ## Upgrading
 
-Change `CONNECTOR_VERSION` to the release version without `v`, then run `docker compose pull` and `docker compose up -d`. Keep the state volume. Upgrade the media image to the matching version when enabled.
+For a source deployment, update the checkout and rebuild with `compose.build.yaml`, then recreate the service with that same file. For a published release, change `CONNECTOR_VERSION` to a version that exists, pull and recreate. Keep the state volume. Source and published standalone deployments share their project/volume, so stop one before switching.
 
 ## Uninstalling
 
-`docker compose down` removes the connector containers and network but preserves named volumes. Keep the state and browser volumes for recovery or reinstalling. Deleting state removes duplicate prevention and OAuth credentials.
+For the source deployment, `docker compose -f compose.build.yaml down` removes containers/network while preserving named volumes. Keep journal and browser-profile backups for recovery. Losing state can duplicate exports.

@@ -3,10 +3,10 @@
 Stop the watcher before opening its state from a one-off command. After first-time authorization, use this maintenance sequence:
 
 ```sh
-docker compose stop connector
-docker compose run --rm connector preview
-docker compose run --rm connector status
-docker compose up -d
+docker compose -f compose.build.yaml stop connector
+docker compose -f compose.build.yaml run --rm connector preview
+docker compose -f compose.build.yaml run --rm connector status
+docker compose -f compose.build.yaml up -d
 ```
 
 ## Data and recovery

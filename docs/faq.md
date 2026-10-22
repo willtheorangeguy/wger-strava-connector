@@ -10,7 +10,7 @@
 
 ??? question "Do I need to run sync after every workout?"
 
-    No. `docker compose up -d` starts the watcher. With defaults, completed sessions become eligible after five minutes and are discovered on a subsequent 15-minute cycle.
+    No. `docker compose -f compose.build.yaml up -d` starts the watcher. With defaults, completed sessions become eligible after five minutes and are discovered on a subsequent 15-minute cycle.
 
 ??? question "Does preview leave all local state untouched?"
 
