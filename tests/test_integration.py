@@ -36,6 +36,7 @@ def remote(config):
 
 def test_completed_sessions_upload_native_exercises_and_survive_restart(live):
     config, state, engine, fixture = live
+    config.media_enabled = True
     preview = engine.preview()
     assert len(preview) == 2  # Unfinished and future sessions excluded.
     assert all(p["state"] == "ready" for p in preview)
@@ -50,6 +51,9 @@ def test_completed_sessions_upload_native_exercises_and_survive_restart(live):
         assert again.sync()["submitted"] == 0
         assert {x["state"] for x in restarted.exports().values()} == {"exported"}
         assert again.sync()["submitted"] == 0
+        jobs = list((config.data_dir / "media" / "outbox").glob("*.json"))
+        assert len(jobs) == len(restarted.exports())
+        assert all(json.loads(p.read_text())["payload"]["sets"] for p in jobs)
         records = remote(config)
         assert len(records["uploads"]) == len(records["requests"]) == 2
         first = records["uploads"]["1"]["payload"]
@@ -127,6 +131,35 @@ def test_unmapped_workout_is_held_and_rotated_token_is_persisted(live):
     assert state.get("oauth")["refresh_token"] == "mock-refresh-2"
     state.set("mappings", mappings)
     assert engine.sync()["submitted"] == 2
+
+
+def test_failed_upload_retry_gets_fresh_job_and_keeps_history(live, monkeypatch):
+    config, state, engine, fixture = live
+    original_items = engine.wger.items
+    selected_id = fixture["sessions"][0]
+
+    def one_session(route, **filters):
+        rows = original_items(route, **filters)
+        if route == "workoutsession":
+            return (row for row in rows if str(row["id"]) == selected_id)
+        return rows
+
+    monkeypatch.setattr(engine.wger, "items", one_session)
+    httpx.post(config.strava_url + "/__fail_next_upload", trust_env=False).raise_for_status()
+    assert engine.sync()["submitted"] == 1
+    assert engine.sync()["submitted"] == 0
+    failed = state.export(selected_id)
+    assert failed["state"] == "failed"
+    assert engine.retry(selected_id)["attempt"] == 1
+    assert engine.sync()["submitted"] == 1
+    assert engine.sync()["submitted"] == 0
+    exported = state.export(selected_id)
+    assert exported["state"] == "exported"
+    assert exported["upload_id"] != failed["upload_id"]
+    assert exported["external_id"] != failed["external_id"]
+    assert exported["attempts"][0]["upload_id"] == failed["upload_id"]
+    assert engine.sync()["submitted"] == 0
+    assert len(remote(config)["uploads"]) == 2
 
 
 def test_source_edits_are_reported_without_duplicate_or_update(live):

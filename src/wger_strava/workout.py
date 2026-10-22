@@ -18,6 +18,12 @@ def stamp(value):
     return result
 
 
+def strava_timestamp(value):
+    # Live Strava JSON processing rejects +00:00 even though its docs permit
+    # ISO offsets. Normalize activity and optional set starts to UTC Z.
+    return value.astimezone(ZoneInfo("UTC")).isoformat().replace("+00:00", "Z")
+
+
 def numeric(value, *, integer=False):
     try:
         number = Decimal(str(value))
@@ -76,13 +82,13 @@ def build(session, logs, mappings, rep_units, weight_units, timezone):
                     raise ValueError("Unsupported load unit; plates and speed are not kilograms")
             when = stamp(log["date"])
             if start <= when <= end:
-                item["start_time"] = when.isoformat()
+                item["start_time"] = strava_timestamp(when)
             sets.append(item)
         except (ValueError, KeyError, InvalidOperation) as error:
             problems.append(f"Set {log['id']}: {error}")
     if not logs:
         problems.append("No completed sets attached to this session")
-    payload = {"version": "1.0", "start_time": start.isoformat(), "utc_offset": int(local.utcoffset().total_seconds()),
+    payload = {"version": "1.0", "start_time": strava_timestamp(start), "utc_offset": int(local.utcoffset().total_seconds()),
                "elapsed_time": int(round(seconds)), "creator": {"name": "wger-strava-connector"}, "sets": sets}
     return payload, sorted(missing), problems
 

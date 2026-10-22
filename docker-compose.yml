@@ -1,7 +1,7 @@
 name: wger-strava-connector
 services:
   connector:
-    image: ${CONNECTOR_IMAGE:-ghcr.io/willtheorangeguy/wger-strava-connector}:${CONNECTOR_VERSION:-0.2.1}
+    image: ${CONNECTOR_IMAGE:-ghcr.io/willtheorangeguy/wger-strava-connector}:${CONNECTOR_VERSION:-0.3.0}
     env_file: .env
     # Run continuously beside the main service and export new eligible workouts.
     command: [watch]

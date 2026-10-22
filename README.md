@@ -2,7 +2,7 @@
 
 Export completed **wger strength workouts** to Strava, including individual exercises, sets, repetitions, weights, and timed sets. A separate Docker service reads your wger API and uploads a structured `WeightTraining` activity to Strava. It does not modify wger.
 
-Version 0.2.0 adds experimental [workout cards and headless-browser login tools](design/README.md): dark muscle-summary cards, 30 illustrated weight comparisons, and saved browser login. Version 0.2.1 refines 19 comparison illustrations, including distinct animal profiles, detailed vehicles, landmarks, a side-view airliner, and a carrier with parked aircraft. A live test attached both sample cards to a consenting account's private activity. Automatic image generation/attachment during production workout sync remains pending.
+Version 0.3.0 adds automatic [workout summary and comparison cards](#automatic-workout-images), source muscle highlights, and durable browser upload recovery. The separate media container includes 30 illustrated weight comparisons and saved browser login.
 
 Uses Strava's documented [strength JSON upload format](https://developers.strava.com/docs/uploads/#json---strength-training-limited), rather than putting the exercises only in an activity description. Exercise names map to Strava's supported identifiers so Strava can display the workout log and muscle map. Strava may group variants under a more general exercise.
 
@@ -32,7 +32,7 @@ Create an empty directory and put these two files in it:
 - `docker-compose.yml`
 - `.env`: copy `.env.example` from this repository, or rename the release download `env.example` to `.env`.
 
-No source checkout, Python installation, or local image build is needed. Download the files from [release v0.2.1](https://github.com/willtheorangeguy/wger-strava-connector/releases/tag/v0.2.1). The Compose file pulls `ghcr.io/willtheorangeguy/wger-strava-connector:0.2.1`. Each release includes all four standalone/existing-wger setup files as downloads after its container publishing workflow completes.
+No source checkout, Python installation, or local image build is needed. Download the files from [release v0.3.0](https://github.com/willtheorangeguy/wger-strava-connector/releases/tag/v0.3.0). The Compose file pulls `ghcr.io/willtheorangeguy/wger-strava-connector:0.3.0`. Each release includes all four standalone/existing-wger setup files as downloads after its container publishing workflow completes.
 
 Fill in `.env`:
 
@@ -108,7 +108,7 @@ Alternatively, copy the `strava-connector` service and the `strava_connector_sta
 
 For maintenance, stop only `strava-connector`, run commands with the same two `-f` arguments, then start it again. To upgrade either deployment, change its version setting, pull, and run `up -d` for the connector service. Keep the state volume. For a fork or an alternative registry, set `CONNECTOR_IMAGE` (standalone) or `STRAVA_CONNECTOR_IMAGE` (existing stack) to the image repository without its tag.
 
-## Experimental workout image tools
+## Card previews and browser login
 
 Download `docker-compose.media.yml` from the same release, then run:
 
@@ -117,18 +117,20 @@ docker compose -f docker-compose.media.yml run --rm preview
 docker compose -f docker-compose.media.yml run --rm --service-ports media-login
 ```
 
-These commands pull `ghcr.io/willtheorangeguy/wger-strava-connector:0.2.1-media`. The first writes sample cards and the comparison catalog to `previews/`. The second opens a browser through `http://localhost:6080/vnc.html`; use its printed temporary viewer password, sign into Strava manually, and stop with Ctrl+C to save the session. No API credentials are needed for these two tools. For a remote Docker host, use the SSH tunnel in the [browser instructions](design/README.md).
+These commands pull `ghcr.io/willtheorangeguy/wger-strava-connector:0.3.0-media`. The first writes sample cards and the comparison catalog to `previews/`. The second opens a browser through `http://localhost:6080/vnc.html`; use its printed temporary viewer password, sign into Strava manually, and stop with Ctrl+C to save the session. No API credentials are needed for these two tools. For a remote Docker host, use the SSH tunnel in the [browser instructions](design/README.md).
 
-The `-media` image is separate from the regular connector image. It contains Chromium and the image renderer. It currently renders synthetic sample data and provides browser login; it does not automatically attach images to future wger exports. Browser photo upload has been proven in a private operator-run test, documented in [live validation](design/LIVE-VALIDATION.md). No public live-upload CLI is included in this release.
+The `-media` image contains Chromium, the image renderer and the automatic worker described below. Browser login is separate from API OAuth and must use the same athlete account.
 
 ## Data and recovery
 
 - Actual logged repetitions and loads are exported; prescribed targets are ignored. Pounds convert to kilograms. Body-weight sets omit a load. Timed sets convert minutes/seconds to whole seconds. Session elapsed time includes rest; active time, calories, heart rate, and GPS are not invented.
+- Activity and optional set timestamps use UTC `Z` suffixes, preserving fractional seconds and the athlete's local display offset. Live Strava JSON processing rejects otherwise equivalent `+00:00` timestamps.
 - Plates, speed/distance units, unknown weight units, invalid numbers, and fractional repetitions are held for review. Change or correct the source data in wger before exporting. wger notes go into the activity description. Individual notes/supersets/RIR/rest targets have no corresponding field in Strava's strength JSON and are not uploaded as structured metrics.
 - Local exercise catalog: 656 identifiers from Strava's upload documentation, checked 2026-10-20. Custom wger exercise names require an explicit supported mapping. Unlisted exercises need a suitable supported equivalent or a future catalog update.
 - Once exported, a workout is not uploaded again. Source edits are reported as `changed`; this version does not update or delete existing Strava activities. Source deletion also leaves the exported activity intact. Strava activity visibility follows your Strava account settings.
 - Pending upload IDs are persisted and polled after restart. A timeout, server error, or crash while uploading leaves the session `uncertain`; it is **not automatically submitted again**. An external ID is a correlation key, not a guarantee of server-side idempotency.
 - To recover an uncertain upload, open the activity on Strava and take its numeric ID from the activity URL. Run `reconcile-activity SESSION_UUID ACTIVITY_ID`. Alternatively, use `reconcile SESSION_UUID UPLOAD_ID` if the upload ID is known. Both verify the external ID before attaching the result. Only if no activity/upload exists, run `retry SESSION_UUID --confirm-no-activity` and then `sync`. Failed uploads also need this explicit retry after correction; do not retry while a Strava job is still processing.
+- An explicit retry retains the session identity and previous attempt history, but uses a fresh `.retryN.json` file identifier because Strava caches failed jobs by external ID. For known upload IDs, retry verifies the remote failure and refuses successful or still-processing jobs. Source data and mappings are revalidated before sending the new attempt.
 - Rate limits persist a cooldown; daily exhaustion waits for the next UTC day. A rejected 429 is retried in a later cycle. A failed/uncertain OAuth refresh may require authorization again. Commands redact API response bodies and secrets from errors.
 
 Strava accounts authorize their own registered application. New applications have limited athlete capacity; see [Strava's rate limits and athlete capacity](https://developers.strava.com/docs/rate-limits/). Use HTTPS for remote services and follow [Strava's authentication documentation](https://developers.strava.com/docs/authentication/).
@@ -159,3 +161,26 @@ pytest -q -m 'not integration'
 CI runs unit/container checks on pushes and pull requests. A manual workflow run also checks out the public wger harness and runs the integration suite. Publishing a matching GitHub release triggers multi-platform GHCR image builds and attaches version-matched setup downloads. See [RELEASING.md](RELEASING.md).
 
 MIT licensed. See [LICENSE](LICENSE) and [VALIDATION.md](VALIDATION.md).
+
+## Automatic workout images
+
+Set `MEDIA_ENABLED=true` and `MEDIA_UNITS=lb` (or `kg`) in `.env`, then recreate the core connector. Each new successful export creates an immutable image job. The activity description also includes total external weight times repetitions; timed holds and unrecorded body weight add no volume.
+
+Download `docker-compose.media.yml` from the same release beside your standalone `.env`, then sign into the same Strava account once:
+
+```sh
+docker compose -f docker-compose.media.yml pull
+docker compose -f docker-compose.media.yml run --rm --service-ports media-login
+docker compose -f docker-compose.media.yml up -d media-worker
+docker compose -f docker-compose.media.yml run --rm --no-deps media-worker status
+```
+
+The standalone core connector must already have created its state volume. For an existing source stack, set `STRAVA_MEDIA_ENABLED=true` and `STRAVA_MEDIA_UNITS=lb` in that stack's environment, and set `CONNECTOR_STATE_VOLUME` beside the media Compose file to the actual `<stack>_strava_connector_state` volume name. For source-checkout builds, use `compose.media.yaml` in the commands above and build `media-worker` first.
+
+Stop `media-worker` before interactive login, and start it again afterwards. Browser cookies are separate from API OAuth. The companion shares the core state volume but never opens its SQLite database. It attaches two 1080 x 1080 cards generated from the exact exported sets, without changing activity fields. Missing muscle metadata is shown as unavailable. Existing exports are not backfilled automatically.
+
+Jobs and receipts persist under `/data/media`. An interrupted file selection or Save is held as `uncertain`; inspect the activity and receipt before any manual recovery. Never delete a receipt simply to retry an upload. Browser login expiry leaves new jobs pending; log in again to resume. Existing activity photos are held for review. API workout exports continue independently of browser failures.
+
+Automatic images are included in v0.3.0. Older releases provide only preview/login tools. The mock-only attachment helper retains its origin restriction.
+
+Muscle highlighting uses explicit source metadata: SparkyFitness's completed-exercise snapshots or wger's exercise-info API (`muscles` and `muscles_secondary`). Source names and Latin anatomy names are translated into the diagram's regions. Primary takes precedence when an area is also secondary in another exercise. Uncompleted SparkyFitness exercises are excluded. Unknown names remain unhighlighted and are recorded under `unmapped_muscles` in the image job; wger metadata fetch failures are recorded under `unavailable_exercises` and do not block the workout upload. Previously attached image files are not rewritten automatically.

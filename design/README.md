@@ -1,3 +1,5 @@
+> Release v0.3.0: automatic export cards are implemented. See the main README's automatic cards section for worker setup, durable job status and recovery. Historical preview milestones below describe earlier published releases.
+
 # Workout images: review milestone
 
 Included in v0.2.0 as experimental rendering/browser tools, **not integrated into production sync**. See the [main README](../README.md#experimental-workout-image-tools) for the published `-media` image and downloadable Compose setup. The checkout-based commands below remain useful for development.

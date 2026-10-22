@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0 — 2026-10-21
+
+- Add automatic summary and weight-comparison images from the exact exported sets, plus total lifting volume in the Strava description.
+- Carry primary/secondary source muscle metadata through the image queue; normalize anatomical names and verify actual diagram colors.
+- Add a persistent companion browser worker with account checks, unchanged-field validation, durable upload intent and duplicate prevention.
+- Correct Strava strength JSON timestamps to use UTC Z suffixes; preserve failed-attempt history and use fresh external IDs for explicit retries.
+- Include the automatic media worker in downloadable setup files; publish regular and media images for amd64/arm64.
+
 ## 0.2.1 — 2026-10-21
 
 - Replace 19 weight comparison illustrations with more recognizable animal profiles, vehicles, machinery, landmarks, and Saturn V details while retaining the shared palette and canvas.

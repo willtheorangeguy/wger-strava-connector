@@ -29,8 +29,17 @@ def test_structured_sets_use_actual_values_and_local_offset():
     assert not missing and not problems
     assert payload["utc_offset"] == -21600 and payload["elapsed_time"] == 3600
     assert payload["sets"] == [{"exercise_type": "BARBELL_BENCH_PRESS", "repetitions": 8,
-                               "weight": 100, "start_time": "2026-07-01T18:05:00+00:00"}]
+                               "weight": 100, "start_time": "2026-07-01T18:05:00Z"}]
     assert "CLEAN" in EXERCISES and "BARBELL_BACK_SQUAT" in EXERCISES and len(EXERCISES) == 656
+
+
+def test_activity_and_set_timestamps_use_utc_z_and_preserve_fractional_seconds():
+    session = {**SESSION, "datetime_start": "2026-07-01T12:00:00.123-06:00", "datetime_end": "2026-07-01T13:00:00.123-06:00"}
+    payload, missing, problems = translate({**LOG, "date": "2026-07-01T12:05:00.456-06:00"}, session=session)
+    assert not missing and not problems
+    assert payload["start_time"] == "2026-07-01T18:00:00.123000Z"
+    assert payload["sets"][0]["start_time"] == "2026-07-01T18:05:00.456000Z"
+    assert payload["utc_offset"] == -21600 and payload["elapsed_time"] == 3600
 
 
 @pytest.mark.parametrize("changes,field,value", [

@@ -82,12 +82,8 @@ def main():
             result = {"authorized": bool(state.get("oauth")), "athlete": state.get("strava_athlete"),
                       "wger": state.get("wger_account"), "exports": state.exports(), "cooldown": state.get("cooldown")}
         elif args.command == "retry":
-            record = state.export(args.session)
-            if not record or record["state"] not in {"uncertain", "failed"}:
-                raise ValueError("Only uncertain or failed uploads can be retried")
-            state.db.execute("DELETE FROM exports WHERE session=?", (args.session,))
-            state.db.commit()
-            result = {"retry_allowed": args.session}
+            engine = Engine(config, state)
+            result = engine.retry(args.session)
         else:
             engine = Engine(config, state)
             if args.command == "watch":

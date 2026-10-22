@@ -1,5 +1,33 @@
 # Validation
 
+Live Strava upload fix, October 21, 2026: rebuilt the local wger image with UTC
+`Z` serialization for activity and optional set timestamps, preserving fractional
+seconds. Explicit retries retain failed-attempt history and use fresh file IDs;
+successful/processing remote jobs cannot be retried. Queued retries revalidate
+source values and mappings. Unit checks passed **90 tests**, with one media
+collection skip and six integration cases deselected.
+The complete real-wger/mock-Strava run then passed **96 tests**, with one media
+collection skip. Coverage includes timestamp offsets and precision, timed/bodyweight
+sets, cached failures, explicit retry identifiers, preserved attempt history,
+restart, source revalidation, reconciliation, token rotation, and duplicate
+prevention. Reports: `reports/live-upload-fix-unit.xml` and `reports/junit.xml`.
+The local `.env` selects the corrected `wger-strava-connector:local` image for
+normal Compose commands; the published registry release has not been changed.
+
+One authorized live test used a local mock wger HTTP API and the normal connector
+engine against real Strava. The workout is dated **2026-10-21 in America/Edmonton**
+and titled **TEST — wger connector mock workout — DELETE ME**. Activity
+`20682924427` was processed successfully. It contains four uploaded sets: two
+bench-press sets (kg and lb inputs), a bodyweight squat set, and a 45-second plank.
+Strava API readback confirmed the exact title, local date, WeightTraining type,
+15-minute elapsed time, external ID, and exactly one matching activity. A repeated
+sync submitted nothing. The mock source/export journal is isolated from normal
+accounts; existing OAuth state was used under an exclusive lock, without copying
+tokens. SparkyFitness syncing was paused for the test and resumed afterward.
+The test activity remains for the operator to inspect and remove. Mobile
+exercise-log rendering was not independently verified. Private fixture, payload,
+journal, and verification artifacts are ignored under `runtime/`.
+
 Companion-service follow-up, October 21, 2026: all three regular Compose setups
 explicitly run `watch`, restart unless stopped, and retain `/data`. The overlay
 was merged with the actual wger harness and its shared main-service network checked.
@@ -30,3 +58,27 @@ Standalone and existing-wger Compose examples validated successfully with dummy 
 The API contract follows Strava's [JSON strength upload documentation](https://developers.strava.com/docs/uploads/), checked 2026-10-20, and the wger `2.8.0-dev.1` image pinned in the sibling harness. This is not a live Strava acceptance test. The exercise catalog is a snapshot of the identifiers documented on that date.
 
 Tests use real wger HTTP endpoints with a generated dedicated account, and a local mock Strava HTTP server. No real Strava credentials or activities are used. The harness demo credentials are documented in README.md; temporary test credentials and reports are ignored by Git.
+
+## Automatic image cards — October 21, 2026
+
+The export engine now snapshots the exact uploaded sets and atomically enqueues image work after the activity ID is known. Queue failures retain successful workout state. A separate Chromium worker attaches two actual-data cards and journals intent before file selection. Existing receipts prevent a second upload, including receipts left uncertain after a crash. The worker checks the logged-in athlete, activity ownership and unchanged activity fields before and after Save. The renderer uses local fonts/artwork; total volume is external kg times repetitions, converted for display. Unrecorded body mass and timed holds do not add lifting volume.
+
+A new clearly labeled synthetic workout was uploaded to the consenting account, dated October 21 in America/Edmonton: 900 seconds, four sets, three exercises, rounded total 1,245 lb. The export created its image job automatically. Both generated PNGs persisted on the activity after browser restart, and Only You visibility was retained. Source fixtures, upload/attachment journals, image hashes, screenshots and destination details remain under ignored `runtime/` directories. The normal source journal and mock source journal were kept separate; API tokens were used from the existing authorized store without making token copies.
+
+Live testing caught a stale Chromium profile lock, an editor prompt that disappears after images exist, and privacy controls that hydrate after the Save button. Verification now waits for the relevant controls and loaded thumbnails. The wger pre-Save hold was inspected read-only; no photos had persisted, so its prior receipt was retained as an attempt record before one explicit recovery. The recovered job saved successfully and was verified after browser restart. No extra workout activity was created by recovery.
+
+Automatic card generation is enabled in both local connector configs, and both companion workers run persistently. The configured SparkyFitness source watcher is running. The standalone wger config still has no source token or Strava client credentials; its real-source watcher was not started. The wger mock upload reused the consenting account's existing OAuth store in isolation.
+
+Validation results for this change: full core/harness suites passed (SparkyFitness 165, wger 98; each skipped the separate media suite). The additional image-queue failure test passed in each project. Browser suites passed their existing cases after rerunning one short login timeout under load; all three new production-worker browser regressions passed in both projects after fixing the PNG/JavaScript test fixtures. Successful Save, post-Save uncertainty, immutable queue replay, persisted photos and prevention of repeat file selection are covered. The live Strava checks above were separate from the intercepted/mock browser tests.
+
+## Muscle metadata regression fix — October 21, 2026
+
+Both engines now preserve primary and secondary anatomy through the durable media job into the rendered summary. SparkyFitness reads only completed exercise snapshots. wger fetches exercise-info for the distinct logged exercise IDs of a new export and translates its English/Latin muscle names. A shared normalization table maps explicit anatomy to supported diagram regions; unknown labels are retained for diagnosis, not guessed. A muscle that is primary anywhere in the workout takes precedence over secondary classification elsewhere. Failed optional wger anatomy reads do not prevent a strength upload.
+
+Regression coverage exercises engine synchronization through the saved image outbox, excludes unfinished exercise metadata, verifies name aliases and unknown labels, and checks actual CSS fill colors on mirrored front/back SVG paths with Chromium. Both projects' browser color tests passed. A separate read-only preview used the configured SparkyFitness instance's real native Barbell Squat workout: primary calves/hamstrings/quads; secondary glutes/lower back; no unmapped source names. The rendered result was inspected visually and is stored privately under ignored `runtime/native-muscle-preview/`. No Strava activity or existing photos were changed by this verification. Existing immutable export jobs and uploaded images remain unchanged; the fix applies to new exports.
+
+Final checks for the muscle fix: SparkyFitness core/harness 170 passed, wger core/harness 105 passed; each skipped the three separately run browser modules. The new Chromium color regression passed independently in both projects. Local images were rebuilt, both image workers restarted, and the configured SparkyFitness core watcher restarted.
+
+## Release v0.3.0
+
+Release includes native strength upload/recovery fixes and automatic workout images with source muscle highlights. Core/harness and browser verification are recorded above. Downloadable media setup now includes the persistent worker and configurable shared state volume. No production credentials or private runtime artifacts are packaged.
