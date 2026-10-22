@@ -2,14 +2,13 @@
 
 Current source version `0.3.0` was not yet a published release on 2026-10-22. The overlay below describes the checked-in service arrangement. To use it with a local image, build the core with `compose.build.yaml`, then set `STRAVA_CONNECTOR_IMAGE=wger-strava-connector` and `STRAVA_CONNECTOR_VERSION=local` in the source stack's `.env`. Do not pull that local image. Published deployments must use the matched files/version from an existing release.
 
-Copy [`examples/docker-compose.wger.yml`](https://github.com/willtheorangeguy/wger-strava-connector/blob/HEAD/examples/docker-compose.wger.yml) beside your existing wger Compose file, and add the settings from [`examples/wger.env.example`](https://github.com/willtheorangeguy/wger-strava-connector/blob/HEAD/examples/wger.env.example) to that stack's `.env`. These two files are also release downloads. No connector source checkout or build context is needed.
+Copy [`examples/docker-compose.wger.yml`](https://github.com/willtheorangeguy/wger-strava-connector/blob/HEAD/examples/docker-compose.wger.yml) beside your existing wger Compose file, and add the settings from [`examples/wger.env.example`](https://github.com/willtheorangeguy/wger-strava-connector/blob/HEAD/examples/wger.env.example) to that stack's `.env`. Published releases provide matched overlay/environment downloads; the current source deployment needs the local build described above.
 
 The default URL `http://web:8000` assumes your wger service is named `web` and both services use the default Compose network. If your service has another name, change `STRAVA_WGER_BASE_URL`. If your stack uses a custom network, add that same network to `strava-connector`. Port 8000 is the container's internal port; your host's published wger port is not needed for this arrangement.
 
 From your wger stack directory, use the overlay with your normal Compose file (replace the first filename if yours is different):
 
 ```sh
-docker compose -f docker-compose.yml -f docker-compose.wger.yml pull strava-connector
 docker compose -f docker-compose.yml -f docker-compose.wger.yml run --rm strava-connector auth-url
 docker compose -f docker-compose.yml -f docker-compose.wger.yml run --rm -i strava-connector auth-complete
 # Use the same two -f arguments for preview, map, sync, etc.

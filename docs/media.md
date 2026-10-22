@@ -11,7 +11,16 @@ docker compose -f compose.media.yaml up -d media-worker
 docker compose -f compose.media.yaml run --rm --no-deps media-worker status
 ```
 
-The standalone core connector must already have created its state volume. For an existing source stack, set `STRAVA_MEDIA_ENABLED=true` and `STRAVA_MEDIA_UNITS=lb` in that stack's environment, and set `CONNECTOR_STATE_VOLUME` beside the media Compose file to the actual `<stack>_strava_connector_state` volume name. For source-checkout builds, use `compose.media.yaml` in the commands above and build `media-worker` first.
+The standalone core connector must already have created its state volume. The source `compose.media.yaml` fixes the external volume name to `wger-strava-connector_state`. For an existing source stack, enable `STRAVA_MEDIA_ENABLED=true` and `STRAVA_MEDIA_UNITS=lb`, then override the worker's external volume with the actual stack volume name.
+
+```yaml title="compose.media.override.yaml"
+volumes:
+  connector_state:
+    external: true
+    name: fitness_strava_connector_state
+```
+
+Replace `fitness_strava_connector_state` with the volume created by your stack. Add both `-f compose.media.yaml -f compose.media.override.yaml` to every media command for that deployment. This source file does not read `CONNECTOR_STATE_VOLUME`; that variable belongs to the release-oriented media example.
 
 Stop `media-worker` before interactive login, and start it again afterwards. Browser cookies are separate from API OAuth. The companion shares the core state volume but never opens its SQLite database. It attaches two 1080 x 1080 cards generated from the exact exported sets, without changing activity fields. Missing muscle metadata is shown as unavailable. Existing exports are not backfilled automatically.
 
@@ -19,7 +28,7 @@ Jobs and receipts persist under `/data/media`. An interrupted file selection or 
 
 Automatic images are implemented in source version 0.3.0. At the 2026-10-22 documentation check, that version was not yet a published release. The mock-only attachment helper retains its origin restriction.
 
-Muscle highlighting uses explicit source metadata: SparkyFitness's completed-exercise snapshots or wger's exercise-info API (`muscles` and `muscles_secondary`). Source names and Latin anatomy names are translated into the diagram's regions. Primary takes precedence when an area is also secondary in another exercise. Uncompleted SparkyFitness exercises are excluded. Unknown names remain unhighlighted and are recorded under `unmapped_muscles` in the image job; wger metadata fetch failures are recorded under `unavailable_exercises` and do not block the workout upload. Previously attached image files are not rewritten automatically.
+Muscle highlighting uses wger's exercise-info API (`muscles` and `muscles_secondary`). Source names and Latin anatomy names are translated into the diagram's regions. Primary takes precedence when an area is also secondary in another exercise. Unknown names remain unhighlighted and are recorded under `unmapped_muscles` in the image job; wger metadata fetch failures are recorded under `unavailable_exercises` and do not block the workout upload. Previously attached image files are not rewritten automatically.
 
 ## Card previews and browser login
 
@@ -30,9 +39,9 @@ docker compose -f compose.media.yaml run --rm preview
 docker compose -f compose.media.yaml run --rm --service-ports media-login
 ```
 
-These commands use the locally built media image. The first writes sample cards and the comparison catalog to `previews/`. The second opens a browser through `http://localhost:6080/vnc.html`; use its printed temporary viewer password, sign into Strava manually, and stop with Ctrl+C to save the session. No API credentials are needed for these two tools. For a remote Docker host, use the SSH tunnel in the [browser instructions](https://github.com/willtheorangeguy/wger-strava-connector/blob/HEAD/design/README.md).
+These commands use the locally built media image. The first writes sample cards and the comparison catalog to `design/previews/`. The second opens a browser through `http://localhost:6080/vnc.html`; use its printed temporary viewer password, sign into Strava manually, and stop with Ctrl+C to save the session. No API credentials are needed for these two tools. For a remote Docker host, use the SSH tunnel in the [browser instructions](https://github.com/willtheorangeguy/wger-strava-connector/blob/HEAD/design/README.md).
 
-The `-media` image contains Chromium, the image renderer and the automatic worker described below. Browser login is separate from API OAuth and must use the same athlete account.
+The `-media` image contains Chromium, the image renderer and the automatic worker. Browser login is separate from API OAuth and must use the same athlete account.
 
 ## Headless server login
 
